@@ -1,4 +1,4 @@
--- Reverse Polish Notation Calculator
+-- Simple s-expression repl.
 
 import Calculator.Base
 import Calculator.Parser
@@ -10,14 +10,38 @@ import System.IO (stdout, hFlush)
 
 main :: IO ()
 main = forever $ do
-  putStr "> " >> hFlush stdout
-  input <- getLine
+  putStr' "> "
+  input <- getLine >>= nest [] []
   putStrLn $ ">>> " ++ show (rpn input)
 
-rpn :: (Fractional a, Read a) => String -> a
+rpn :: String -> Double
 rpn s = case parseExp s of
           Left err   -> error $ show err
           Right sexp -> e sexp
 
-rpnFile :: (Fractional a, Read a) => FilePath -> IO a
-rpnFile fp = rpn `fmap` readFile fp
+-- Runs on the assumption that operators are only 1 char long.
+nest :: [Int] -> [Int] -> String -> IO String
+nest ls rs line = do
+  let (ls',rs')   = lsAndRs line
+      (ls'',rs'') = (ls ++ ls', rs ++ rs')
+  case compare (length ls'') (length rs'') of
+    EQ -> return line
+    LT -> error "Too many right parentheses."
+    GT -> do
+      let pos = ls'' !! (length ls'' - length rs'' - 1)
+          pad = replicate (pos + 2) ' '
+      putStr' $ ">  " ++ pad
+      input <- (('\n' : pad) ++) `fmap` getLine
+      (line ++) `fmap` nest ls'' rs'' input
+
+lsAndRs :: String -> ([Int],[Int])
+lsAndRs line = dropFst $ foldr fold (length line - 1,[],[]) line
+    where fold '(' (n,ls,rs) = (n - 1, n : ls, rs)
+          fold ')' (n,ls,rs) = (n - 1, ls, n : rs)
+          fold _   (n,ls,rs) = (n - 1, ls, rs)
+
+dropFst :: (a,b,c) -> (b,c)
+dropFst (_,b,c) = (b,c)
+
+putStr' :: String -> IO ()
+putStr' s = putStr s >> hFlush stdout
