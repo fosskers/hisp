@@ -14,7 +14,7 @@ main = forever $ do
   input <- getLine >>= nest [] []
   putStrLn $ ">>> " ++ show (rpn input)
 
-rpn :: String -> Double
+rpn :: String -> Value
 rpn s = case parseExp s of
           Left err   -> error $ show err
           Right sexp -> e sexp

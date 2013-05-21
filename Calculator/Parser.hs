@@ -7,31 +7,37 @@ import Calculator.Base
 
 ---
 
-parseExp :: (Read a, Num a) => String -> Either ParseError (Exp a)
+parseExp :: String -> Either ParseError (Exp)
 parseExp = parse sexp "(s-exp)"
 
-sexp :: (Read a, Num a) => Parser (Exp a)
+sexp :: Parser (Exp)
 sexp = spaces *> char '(' *> prim <*> args <* char ')'
 
-prim :: (Read a, Num a) => Parser ([Exp a] -> Exp a)
+prim :: Parser ([Exp] -> Exp)
 prim = (op <|> number) <* spaces
 
-args :: (Read a, Num a) => Parser [Exp a]
+args :: Parser [Exp]
 args = many1 ((sexp <|> number') <* spaces)
 
-number :: (Read a, Num a) => Parser ([Exp a] -> Exp a)
+number :: Parser ([Exp] -> Exp)
 number = const `fmap` number'
 
-number' :: (Read a, Num a) => Parser (Exp a)
-number' = (Val . read) <$> digits
+number' :: Parser (Exp)
+number' = do
+  ds <- digits
+  let val = if '.' `elem` ds
+            then RD $ (read ds :: Double)
+            else RI $ (read ds :: Int)
+  return $ Val val
 
 digits :: Parser String
 digits = (++) <$> whole <*> option "" dec
     where whole = many1 digit
           dec   = (:) <$> char '.' <*> whole
 
-op :: Num a => Parser ([Exp a] -> Exp a)
+op :: Parser ([Exp] -> Exp)
 op = Add <$ char '+'
      <|> Sub <$ char '-'
      <|> Mul <$ char '*'
-     <|> Div <$ char '/'
+--     <|> Div <$ char '/'
+--     <|> Pow <$ char '^'
