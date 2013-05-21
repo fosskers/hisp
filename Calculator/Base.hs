@@ -1,6 +1,10 @@
-module Calculator.Base where
+module Calculator.Base
+    ( Value(..)
+    , Exp(..)
+    , e ) where
 
 import Control.Arrow (first,second)
+import Control.Monad (foldM)
 
 ---
 
@@ -65,11 +69,39 @@ instance Num Value where
     fromInteger = I
 
 
-e :: Exp -> Value
-e (Val a)  = a
-e (Add ns) = foldr ((+) . e) 0 ns
-e (Mul ns) = foldr ((*) . e) 1 ns
-e (Sub (n:ns)) = foldl (\acc n' -> acc - e n') (e n) ns
---e (Div (n:ns)) = foldl (\acc n' -> acc / e n') (e n) ns
-e (Pow (n:ns)) = foldl (\acc n' -> acc ^ e n') (e n) ns
-e (Fac [n]) = product [1 .. (e n)]
+e :: Exp -> Either String Value
+e (Val a)  = return a
+
+e (Add [_]) = tooFew Add
+e (Add ns)  = fold (+) 0 ns
+
+e (Mul [_]) = tooFew Mul
+e (Mul ns)  = fold (*) 1 ns
+
+e (Sub [_])    = tooFew Sub
+e (Sub (n:ns)) = e n >>= \n' -> fold (-) n' ns
+
+--e (Div (n:ns)) = e n >>= \n' -> fold (/) n' ns
+
+e (Pow [_])    = tooFew Pow
+e (Pow (n:ns)) = e n >>= \n' -> fold (^) n' ns
+
+e (Fac [n]) = e n >>= \n' -> return (product [1 .. n'])
+e (Fac [])  = tooFew Fac
+e (Fac _)   = tooMany Fac
+
+fold :: (Value -> Value -> Value) -> Value -> [Exp] -> Either String Value
+fold f = foldM (\acc n' -> (f acc) `fmap` e n')
+
+symbol :: Exp -> String
+symbol (Add _) = "+"
+symbol (Mul _) = "*"
+symbol (Sub _) = "-"
+symbol (Pow _) = "^"
+symbol (Fac _) = "!"
+
+tooMany :: (a -> Exp) -> Either String b
+tooMany f = Left $ "Too many args from " ++ symbol (f undefined)
+
+tooFew :: (a -> Exp) -> Either String b
+tooFew  f = Left $ "Too few args from " ++ symbol (f undefined)

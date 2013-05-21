@@ -3,8 +3,8 @@
 import Calculator.Base
 import Calculator.Parser
 
-import Control.Monad (forever)
 import System.IO (stdout, hFlush)
+import Control.Monad
 
 ---
 
@@ -12,11 +12,14 @@ main :: IO ()
 main = forever $ do
   putStr' "> "
   input <- getLine >>= nest [] []
-  putStrLn $ ">>> " ++ show (rpn input)
+  unless (null input) $
+         putStrLn $ ">>> " ++ case rpn input of
+                                Left err -> err
+                                Right v  -> show v
 
-rpn :: String -> Value
+rpn :: String -> Either String Value
 rpn s = case parseExp s of
-          Left err   -> error $ show err
+          Left err   -> Left $ show err
           Right sexp -> e sexp
 
 -- Runs on the assumption that operators are only 1 char long.
@@ -31,7 +34,7 @@ nest ls rs line = do
     GT -> do
       let pos = ls'' !! (length ls'' - length rs'' - 1)
           pad = replicate (pos + 2) ' '
-      putStr' $ ">  " ++ pad
+      putStr' $ ".  " ++ pad
       input <- (('\n' : pad) ++) `fmap` getLine
       (line ++) `fmap` nest ls'' rs'' input
 
