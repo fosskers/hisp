@@ -20,6 +20,7 @@ rpn s = case parseExp s of
           Right sexp -> e sexp
 
 -- Runs on the assumption that operators are only 1 char long.
+-- This could be better.
 nest :: [Int] -> [Int] -> String -> IO String
 nest ls rs line = do
   let (ls',rs')   = lsAndRs line

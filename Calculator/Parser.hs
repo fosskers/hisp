@@ -26,8 +26,8 @@ number' :: Parser (Exp)
 number' = do
   ds <- digits
   let val = if '.' `elem` ds
-            then RD $ (read ds :: Double)
-            else RI $ (read ds :: Int)
+            then D $ (read ds :: Double)
+            else I $ (read ds :: Integer)
   return $ Val val
 
 digits :: Parser String
@@ -40,4 +40,5 @@ op = Add <$ char '+'
      <|> Sub <$ char '-'
      <|> Mul <$ char '*'
 --     <|> Div <$ char '/'
---     <|> Pow <$ char '^'
+     <|> Pow <$ char '^'
+     <|> Fac <$ char '!'
