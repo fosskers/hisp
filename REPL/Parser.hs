@@ -23,7 +23,7 @@ args :: REPLParser [Exp]
 args = many1 ((sexp <|> symbol) <* spaces)
 
 symbol :: REPLParser Exp
-symbol = x <|> y <|> z <|> number'
+symbol = x <|> y <|> z <|> number' <|> s_pi
 
 number :: REPLParser ([Exp] -> Exp)
 number = const `fmap` number'
@@ -57,3 +57,6 @@ y = char 'y' *> fmap (Val . (!! 1)) getState
 
 z :: REPLParser Exp
 z = char 'z' *> fmap (Val . (!! 2)) getState
+
+s_pi :: REPLParser Exp
+s_pi = Val pi <$ string "pi"
