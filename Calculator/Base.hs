@@ -93,15 +93,19 @@ e (Fac _)   = tooMany Fac
 fold :: (Value -> Value -> Value) -> Value -> [Exp] -> Either String Value
 fold f = foldM (\acc n' -> (f acc) `fmap` e n')
 
+replError :: (a -> Exp) -> String -> Either String b
+replError f msg = Left $ msg ++ symbol (f undefined)
+
+tooMany :: (a -> Exp) -> Either String b
+tooMany f = replError f "Too many args from "
+
+tooFew :: (a -> Exp) -> Either String b
+tooFew  f = replError f "Too few args from "
+
 symbol :: Exp -> String
 symbol (Add _) = "+"
 symbol (Mul _) = "*"
 symbol (Sub _) = "-"
+symbol (Div _) = "/"
 symbol (Pow _) = "^"
 symbol (Fac _) = "!"
-
-tooMany :: (a -> Exp) -> Either String b
-tooMany f = Left $ "Too many args from " ++ symbol (f undefined)
-
-tooFew :: (a -> Exp) -> Either String b
-tooFew  f = Left $ "Too few args from " ++ symbol (f undefined)

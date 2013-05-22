@@ -11,7 +11,7 @@ import Control.Monad
 main :: IO ()
 main = forever $ do
   putStr' "> "
-  input <- getLine >>= nest [] []
+  input <- getLine >>= nest []
   unless (null input) $
          putStrLn $ ">>> " ++ case rpn input of
                                 Left err -> err
@@ -22,27 +22,31 @@ rpn s = case parseExp s of
           Left err   -> Left $ show err
           Right sexp -> e sexp
 
--- Runs on the assumption that operators are only 1 char long.
--- This could be better.
-nest :: [Int] -> [Int] -> String -> IO String
-nest ls rs line = do
-  let (ls',rs')   = lsAndRs line
-      (ls'',rs'') = (ls ++ ls', rs ++ rs')
-  case compare (length ls'') (length rs'') of
-    EQ -> return line
-    LT -> error "Too many right parentheses."
-    GT -> do
-      let pos = ls'' !! (length ls'' - length rs'' - 1)
-          pad = replicate (pos + 2) ' '
+-- Only notes the locations of left parens.
+-- Convert this to `MaybeT IO String`?
+nest :: [Int] -> String -> IO String
+nest ps line =
+  case parens ps line of
+    Nothing  -> error "Too many right parentheses."
+    Just []  -> return line
+    Just ps' -> do
+      let pos = head ps' + 2
+          pad = replicate pos ' '
       putStr' $ ".  " ++ pad
       input <- (('\n' : pad) ++) `fmap` getLine
-      (line ++) `fmap` nest ls'' rs'' input
+      (line ++) `fmap` nest ps' input
 
-lsAndRs :: String -> ([Int],[Int])
-lsAndRs line = dropFst $ foldr fold (length line - 1,[],[]) line
-    where fold '(' (n,ls,rs) = (n - 1, n : ls, rs)
-          fold ')' (n,ls,rs) = (n - 1, ls, n : rs)
-          fold _   (n,ls,rs) = (n - 1, ls, rs)
+-- | Can fail if there are too many right parens.
+parens :: [Int] -> String -> Maybe [Int]
+parens ps line = pop . dropFst . foldl fold (0,ps,0) $ line
+    where fold (n,ls,rs) '(' = (n + 1, n : ls, rs)
+          fold (n,ls,rs) ')' = (n + 1, ls, rs + 1)
+          fold (n,ls,rs) _   = (n + 1, ls, rs)
+
+-- | Pops a left paren off the stack for each right paren found.
+pop :: ([Int],Int) -> Maybe [Int]
+pop (ls,rs) | rs > length ls = Nothing
+            | otherwise      = Just $ drop rs ls
 
 dropFst :: (a,b,c) -> (b,c)
 dropFst (_,b,c) = (b,c)
