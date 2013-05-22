@@ -5,21 +5,26 @@ import Calculator.Parser
 
 import System.IO (stdout, hFlush)
 import Control.Monad
+import Control.Monad.State.Lazy
 
 ---
 
 main :: IO ()
-main = forever $ do
-  putStr' "> "
-  input <- getLine >>= nest []
-  unless (null input) $
-         putStrLn $ ">>> " ++ case rpn input of
-                                Left err -> err
-                                Right v  -> show v
+main = void $ runStateT run (I 0)
 
-rpn :: String -> Either String Value
-rpn s = case parseExp s of
-          Left err   -> Left $ show err
+run :: StateT Value IO ()
+run = forever $ do
+  putStr' "> "
+  input <- liftIO (getLine >>= nest [])
+  unless (null input) $ get >>= \x -> do
+         output <- case rpn x input of
+                     Left err -> return err
+                     Right v  -> put v >> return (show v)
+         putStrLn' $ ">>> " ++ output
+
+rpn :: Value -> String -> Either String Value
+rpn x s = case parseExp x s of
+          Left err   -> Left $ "Syntax Error\n" ++ show err
           Right sexp -> e sexp
 
 -- Only notes the locations of left parens.
@@ -51,5 +56,8 @@ pop (ls,rs) | rs > length ls = Nothing
 dropFst :: (a,b,c) -> (b,c)
 dropFst (_,b,c) = (b,c)
 
-putStr' :: String -> IO ()
-putStr' s = putStr s >> hFlush stdout
+putStr' :: MonadIO m => String -> m ()
+putStr' s = liftIO (putStr s >> hFlush stdout)
+
+putStrLn' :: MonadIO m => String -> m ()
+putStrLn' s = putStr' $ s ++ "\n"

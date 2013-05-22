@@ -1,28 +1,34 @@
 module Calculator.Parser ( parseExp ) where
 
 import Text.ParserCombinators.Parsec hiding ((<|>))
+import Text.Parsec.Prim (Parsec)
 import Control.Applicative
 
 import Calculator.Base
 
 ---
 
-parseExp :: String -> Either ParseError (Exp)
-parseExp = parse sexp "(s-exp)"
+type REPLParser = Parsec String Value
 
-sexp :: Parser (Exp)
+parseExp :: Value -> String -> Either ParseError (Exp)
+parseExp x s = runParser (symbol <|> sexp) x "(s-exp)" s
+
+sexp :: REPLParser (Exp)
 sexp = spaces *> char '(' *> prim <*> args <* char ')'
 
-prim :: Parser ([Exp] -> Exp)
+prim :: REPLParser ([Exp] -> Exp)
 prim = (op <|> number) <* spaces
 
-args :: Parser [Exp]
-args = many1 ((sexp <|> number') <* spaces)
+args :: REPLParser [Exp]
+args = many1 ((sexp <|> symbol) <* spaces)
 
-number :: Parser ([Exp] -> Exp)
+symbol :: REPLParser Exp
+symbol = x <|> number'
+
+number :: REPLParser ([Exp] -> Exp)
 number = const `fmap` number'
 
-number' :: Parser (Exp)
+number' :: REPLParser (Exp)
 number' = do
   ds <- digits
   let val = if '.' `elem` ds
@@ -30,15 +36,18 @@ number' = do
             else I $ (read ds :: Integer)
   return $ Val val
 
-digits :: Parser String
+digits :: REPLParser String
 digits = (++) <$> whole <*> option "" dec
     where whole = many1 digit
           dec   = (:) <$> char '.' <*> whole
 
-op :: Parser ([Exp] -> Exp)
+op :: REPLParser ([Exp] -> Exp)
 op = Add <$ char '+'
      <|> Sub <$ char '-'
      <|> Mul <$ char '*'
      <|> Div <$ char '/'
      <|> Pow <$ char '^'
      <|> Fac <$ char '!'
+
+x :: REPLParser Exp
+x = char 'x' *> fmap Val getState
