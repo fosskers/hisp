@@ -23,7 +23,12 @@ data Value = I Integer
            | D Double deriving (Eq,Ord)
 
 asI :: Value -> Value
-asI = I . toInteger . fromEnum
+asI i@(I _) = i
+asI (D d)   = I . toInteger . fromEnum $ d
+
+asD :: Value -> Value
+asD d@(D _) = d
+asD (I i)   = D $ fromInteger i
 
 instance Show Value where
     show (I i) = show i
@@ -33,6 +38,11 @@ instance Enum Value where
     toEnum = I . toInteger
     fromEnum (I i) = fromEnum i
     fromEnum (D d) = fromEnum d
+
+instance Fractional Value where
+    fromRational = D . fromRational
+    (D d1) / (D d2) = D $ d1 / d2
+    x / y = asD x / asD y
 
 instance Real Value where
     toRational (I i) = toRational i
@@ -46,19 +56,16 @@ instance Integral Value where
 
 instance Num Value where
     I i + I j = I $ i + j
-    I i + D d = D $ fromIntegral i + d
-    D d + I i = D $ d + fromIntegral i
     D d + D f = D $ d + f
+    x + y = asD x + asD y
 
     I i * I j = I $ i * j
-    I i * D d = D $ fromIntegral i * d
-    D d * I i = D $ d * fromIntegral i
     D d * D f = D $ d * f
+    x * y = asD x * asD y
 
     I i - I j = I $ i - j
-    I i - D d = D $ fromIntegral i - d
-    D d - I i = D $ d - fromIntegral i
     D d - D f = D $ d - f
+    x - y = asD x - asD y
 
     abs (I i) = I $ abs i
     abs (D d) = D $ abs d
@@ -68,30 +75,31 @@ instance Num Value where
 
     fromInteger = I
 
+---
 
 e :: Exp -> Either String Value
 e (Val a)  = return a
 
 e (Add [_]) = tooFew Add
-e (Add ns)  = fold (+) 0 ns
+e (Add ns)  = foldE (+) 0 ns
 
 e (Mul [_]) = tooFew Mul
-e (Mul ns)  = fold (*) 1 ns
+e (Mul ns)  = foldE (*) 1 ns
 
 e (Sub [_])    = tooFew Sub
-e (Sub (n:ns)) = e n >>= \n' -> fold (-) n' ns
+e (Sub (n:ns)) = e n >>= \n' -> foldE (-) n' ns
 
---e (Div (n:ns)) = e n >>= \n' -> fold (/) n' ns
+e (Div (n:ns)) = e n >>= \n' -> foldE (/) n' ns
 
 e (Pow [_])    = tooFew Pow
-e (Pow (n:ns)) = e n >>= \n' -> fold (^) n' ns
+e (Pow (n:ns)) = e n >>= \n' -> foldE (^) n' ns
 
 e (Fac [n]) = e n >>= \n' -> return (product [1 .. n'])
 e (Fac [])  = tooFew Fac
 e (Fac _)   = tooMany Fac
 
-fold :: (Value -> Value -> Value) -> Value -> [Exp] -> Either String Value
-fold f = foldM (\acc n' -> (f acc) `fmap` e n')
+foldE :: (Value -> Value -> Value) -> Value -> [Exp] -> Either String Value
+foldE f = foldM (\acc n' -> (f acc) `fmap` e n')
 
 replError :: (a -> Exp) -> String -> Either String b
 replError f msg = Left $ msg ++ symbol (f undefined)

@@ -39,6 +39,6 @@ op :: Parser ([Exp] -> Exp)
 op = Add <$ char '+'
      <|> Sub <$ char '-'
      <|> Mul <$ char '*'
---     <|> Div <$ char '/'
+     <|> Div <$ char '/'
      <|> Pow <$ char '^'
      <|> Fac <$ char '!'
