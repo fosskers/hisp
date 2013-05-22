@@ -1,25 +1,13 @@
-module Calculator.Base
+module REPL.Types
     ( Value(..)
     , Exp(..)
-    , REPLState
-    , initialState
-    , inject
-    , e ) where
+    , REPLState ) where
 
-import Control.Monad.State.Lazy
 import Control.Arrow (first,second)
 
 ---
 
 type REPLState = [Value]
-
-initialState :: REPLState
-initialState = [I 0, I 0, I 0]
-
--- | Inject a new Value into the REPLState.
--- Signature will always stay the same while the implementation changes :)
-inject :: Monad m => Value -> StateT REPLState m ()
-inject v = get >>= \rs -> unless (v `elem` rs) (put $ take 3 (v : rs))
 
 data Exp = Val Value
          | Add [Exp]
@@ -32,6 +20,9 @@ data Exp = Val Value
 
 -- Ord might need a specific declaration.
 -- Or else all I's might come before any D's regardless of number.
+-- | A Numeric type of pure evil. Converts between Integers and Doubles
+-- where necessary. This allows it to be `Integral` and `Floating` at the same
+-- time.
 data Value = I Integer
            | D Double deriving (Eq,Ord)
 
@@ -67,6 +58,37 @@ instance Integral Value where
     quotRem (I i1) (I i2) = first I . second I $ quotRem i1 i2
     quotRem x y = quotRem (asI x) (asI y)
 
+-- Yes, boilerplate!
+instance Floating Value where
+    pi = D pi  -- Tau is better.
+
+    exp (D d) = D $ exp d
+    exp x     = exp $ asD x
+    log (D d) = D $ log d
+    log x     = exp $ asD x
+    sin (D d) = D $ sin d
+    sin x     = exp $ asD x
+    cos (D d) = D $ cos d
+    cos x     = cos $ asD x
+
+    sinh (D d) = D $ sinh d
+    sinh x     = sinh $ asD x
+    cosh (D d) = D $ cosh d
+    cosh x     = cosh $ asD x
+    asin (D d) = D $ asin d
+    asin x     = asin $ asD x
+    acos (D d) = D $ acos d
+    acos x     = acos $ asD x
+    atan (D d) = D $ atan d
+    atan x     = atan $ asD x
+
+    asinh (D d) = D $ asinh d
+    asinh x     = asinh $ asD x
+    acosh (D d) = D $ acosh d
+    acosh x     = acosh $ asD x
+    atanh (D d) = D $ atanh d
+    atanh x     = atanh $ asD x
+
 instance Num Value where
     I i + I j = I $ i + j
     D d + D f = D $ d + f
@@ -87,46 +109,3 @@ instance Num Value where
     signum (D d) = D $ signum d
 
     fromInteger = I
-
----
-
-e :: Exp -> Either String Value
-e (Val a)  = return a
-
-e (Add [_]) = tooFew Add
-e (Add ns)  = foldE (+) 0 ns
-
-e (Mul [_]) = tooFew Mul
-e (Mul ns)  = foldE (*) 1 ns
-
-e (Sub [_])    = tooFew Sub
-e (Sub (n:ns)) = e n >>= \n' -> foldE (-) n' ns
-
-e (Div (n:ns)) = e n >>= \n' -> foldE (/) n' ns
-
-e (Pow [_])    = tooFew Pow
-e (Pow (n:ns)) = e n >>= \n' -> foldE (^) n' ns
-
-e (Fac [n]) = e n >>= \n' -> return (product [1 .. n'])
-e (Fac [])  = tooFew Fac
-e (Fac _)   = tooMany Fac
-
-foldE :: (Value -> Value -> Value) -> Value -> [Exp] -> Either String Value
-foldE f = foldM (\acc n' -> (f acc) `fmap` e n')
-
-replError :: (a -> Exp) -> String -> Either String b
-replError f msg = Left $ msg ++ symbol (f undefined)
-
-tooMany :: (a -> Exp) -> Either String b
-tooMany f = replError f "Too many args from "
-
-tooFew :: (a -> Exp) -> Either String b
-tooFew  f = replError f "Too few args from "
-
-symbol :: Exp -> String
-symbol (Add _) = "+"
-symbol (Mul _) = "*"
-symbol (Sub _) = "-"
-symbol (Div _) = "/"
-symbol (Pow _) = "^"
-symbol (Fac _) = "!"

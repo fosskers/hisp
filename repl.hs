@@ -1,7 +1,8 @@
 -- Simple s-expression repl.
 
-import Calculator.Base
-import Calculator.Parser
+import REPL.Base
+import REPL.Types
+import REPL.Parser
 
 import System.IO (stdout, hFlush)
 import Control.Monad

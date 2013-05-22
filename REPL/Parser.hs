@@ -1,10 +1,10 @@
-module Calculator.Parser ( parseExp ) where
+module REPL.Parser ( parseExp ) where
 
 import Text.ParserCombinators.Parsec hiding ((<|>))
 import Text.Parsec.Prim (Parsec)
 import Control.Applicative
 
-import Calculator.Base
+import REPL.Types
 
 ---
 
