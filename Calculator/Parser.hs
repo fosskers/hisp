@@ -8,10 +8,10 @@ import Calculator.Base
 
 ---
 
-type REPLParser = Parsec String Value
+type REPLParser = Parsec String REPLState
 
-parseExp :: Value -> String -> Either ParseError (Exp)
-parseExp x s = runParser (symbol <|> sexp) x "(s-exp)" s
+parseExp :: REPLState -> String -> Either ParseError (Exp)
+parseExp rs s = runParser (symbol <|> sexp) rs "(s-exp)" s
 
 sexp :: REPLParser (Exp)
 sexp = spaces *> char '(' *> prim <*> args <* char ')'
@@ -23,7 +23,7 @@ args :: REPLParser [Exp]
 args = many1 ((sexp <|> symbol) <* spaces)
 
 symbol :: REPLParser Exp
-symbol = x <|> number'
+symbol = x <|> y <|> z <|> number'
 
 number :: REPLParser ([Exp] -> Exp)
 number = const `fmap` number'
@@ -50,4 +50,10 @@ op = Add <$ char '+'
      <|> Fac <$ char '!'
 
 x :: REPLParser Exp
-x = char 'x' *> fmap Val getState
+x = char 'x' *> fmap (Val . head) getState
+
+y :: REPLParser Exp
+y = char 'y' *> fmap (Val . (!! 1)) getState
+
+z :: REPLParser Exp
+z = char 'z' *> fmap (Val . (!! 2)) getState

@@ -1,12 +1,25 @@
 module Calculator.Base
     ( Value(..)
     , Exp(..)
+    , REPLState
+    , initialState
+    , inject
     , e ) where
 
+import Control.Monad.State.Lazy
 import Control.Arrow (first,second)
-import Control.Monad (foldM)
 
 ---
+
+type REPLState = [Value]
+
+initialState :: REPLState
+initialState = [I 0, I 0, I 0]
+
+-- | Inject a new Value into the REPLState.
+-- Signature will always stay the same while the implementation changes :)
+inject :: Monad m => Value -> StateT REPLState m ()
+inject v = get >>= \rs -> unless (v `elem` rs) (put $ take 3 (v : rs))
 
 data Exp = Val Value
          | Add [Exp]

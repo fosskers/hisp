@@ -10,20 +10,20 @@ import Control.Monad.State.Lazy
 ---
 
 main :: IO ()
-main = void $ runStateT run (I 0)
+main = void $ runStateT run initialState
 
-run :: StateT Value IO ()
+run :: StateT REPLState IO ()
 run = forever $ do
   putStr' "> "
   input <- liftIO (getLine >>= nest [])
-  unless (null input) $ get >>= \x -> do
-         output <- case rpn x input of
+  unless (null input) $ get >>= \rs -> do
+         output <- case rpn rs input of
                      Left err -> return err
-                     Right v  -> put v >> return (show v)
+                     Right v  -> inject v >> return (show v)
          putStrLn' $ ">>> " ++ output
 
-rpn :: Value -> String -> Either String Value
-rpn x s = case parseExp x s of
+rpn :: REPLState -> String -> Either String Value
+rpn rs s = case parseExp rs s of
           Left err   -> Left $ "Syntax Error\n" ++ show err
           Right sexp -> e sexp
 
