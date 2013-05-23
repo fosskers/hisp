@@ -10,10 +10,10 @@ import REPL.Types
 
 type REPLParser = Parsec String REPLState
 
-parseExp :: REPLState -> String -> Either ParseError (Exp)
-parseExp rs s = runParser (symbol <|> sexp) rs "(s-exp)" s
+parseExp :: REPLState -> String -> Either ParseError Exp
+parseExp rs = runParser (symbol <|> sexp) rs "(s-exp)"
 
-sexp :: REPLParser (Exp)
+sexp :: REPLParser Exp
 sexp = spaces *> char '(' *> prim <*> args <* char ')'
 
 prim :: REPLParser ([Exp] -> Exp)
@@ -23,17 +23,17 @@ args :: REPLParser [Exp]
 args = many1 ((sexp <|> symbol) <* spaces)
 
 symbol :: REPLParser Exp
-symbol = x <|> y <|> z <|> number' <|> s_pi
+symbol = x <|> y <|> z <|> number' <|> sPi
 
 number :: REPLParser ([Exp] -> Exp)
 number = const `fmap` number'
 
-number' :: REPLParser (Exp)
+number' :: REPLParser Exp
 number' = do
   ds <- digits
   let val = if '.' `elem` ds
-            then D $ (read ds :: Double)
-            else I $ (read ds :: Integer)
+            then D (read ds :: Double)
+            else I (read ds :: Integer)
   return $ Val val
 
 digits :: REPLParser String
@@ -58,5 +58,5 @@ y = char 'y' *> fmap (Val . (!! 1)) getState
 z :: REPLParser Exp
 z = char 'z' *> fmap (Val . (!! 2)) getState
 
-s_pi :: REPLParser Exp
-s_pi = Val pi <$ string "pi"
+sPi :: REPLParser Exp
+sPi = Val pi <$ string "pi"

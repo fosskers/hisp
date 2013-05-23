@@ -41,7 +41,7 @@ e (Fac _)   = tooMany Fac
 ---
 
 foldE :: (Value -> Value -> Value) -> Value -> [Exp] -> Either String Value
-foldE f = foldM (\acc n' -> (f acc) `fmap` e n')
+foldE f = foldM (\acc n' -> f acc `fmap` e n')
 
 replError :: (a -> Exp) -> String -> Either String b
 replError f msg = Left $ msg ++ symbol (f undefined)
