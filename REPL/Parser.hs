@@ -14,7 +14,7 @@ parseExp :: REPLState -> String -> Either ParseError Exp
 parseExp rs = runParser (symbol <|> sexp) rs "(s-exp)"
 
 sexp :: REPLParser Exp
-sexp = spaces *> char '(' *> prim <*> args <* char ')'
+sexp = spaces *> char '(' *> spaces *> prim <*> args <* char ')'
 
 prim :: REPLParser ([Exp] -> Exp)
 prim = (op <|> number) <* spaces
@@ -23,7 +23,11 @@ args :: REPLParser [Exp]
 args = many1 ((sexp <|> symbol) <* spaces)
 
 symbol :: REPLParser Exp
-symbol = x <|> y <|> z <|> number' <|> sPi
+symbol = choice [ x
+                , y
+                , z
+                , number'
+                , sPi ]
 
 number :: REPLParser ([Exp] -> Exp)
 number = const `fmap` number'
@@ -48,6 +52,8 @@ op = Add <$ char '+'
      <|> Div <$ char '/'
      <|> Pow <$ char '^'
      <|> Fac <$ char '!'
+     <|> Sin <$ string "sin"
+     <|> Cos <$ string "cos"
 
 x :: REPLParser Exp
 x = char 'x' *> fmap (Val . head) getState

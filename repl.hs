@@ -39,26 +39,31 @@ nest ps line =
     Nothing  -> MaybeT $ return Nothing
     Just []  -> return line
     Just ps' -> do
-      let pos = head ps' + 2
-          pad = replicate pos ' '
+      let pad = replicate (head ps') ' '
       putStr' $ ".  " ++ pad
       input <- (('\n' : pad) ++) `fmap` getLine'
       (line ++) `fmap` nest ps' input
 
+-- Change to record location of first char of first arg!!
 -- | Can fail if there are too many right parens.
 parens :: [Int] -> String -> Maybe [Int]
-parens ps line = pop . dropFst . foldl fold (0,ps,0) $ line
-    where fold (n,ls,rs) '(' = (n + 1, n : ls, rs)
-          fold (n,ls,rs) ')' = (n + 1, ls, rs + 1)
-          fold (n,ls,rs) _   = (n + 1, ls, rs)
+parens ps line = pop $ fold (1,ps,0) line
+    where fold (_,ls,rs) []       = (ls,rs)
+          fold (n,ls,rs) ('(':xs) = fold (n + 1, indent n xs : ls, rs) xs
+          fold (n,ls,rs) (')':xs) = fold (n + 1, ls, rs + 1) xs
+          fold (n,ls,rs) (_:xs)   = fold (n + 1, ls, rs) xs
+
+-- | The position an argument should be indented to on the next line.
+indent :: Int -> String -> Int
+indent p []      = p
+indent p (' ':_) = p
+indent p ('(':_) = p - 1
+indent p (_:ns)  = indent (p + 1) ns
 
 -- | Pops a left paren off the stack for each right paren found.
 pop :: ([Int],Int) -> Maybe [Int]
 pop (ls,rs) | rs > length ls = Nothing
             | otherwise      = Just $ drop rs ls
-
-dropFst :: (a,b,c) -> (b,c)
-dropFst (_,b,c) = (b,c)
 
 putStr' :: MonadIO m => String -> m ()
 putStr' s = liftIO (putStr s >> hFlush stdout)

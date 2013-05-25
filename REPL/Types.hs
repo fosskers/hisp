@@ -16,6 +16,8 @@ data Exp = Val Value
          | Div [Exp]
          | Pow [Exp]
          | Fac [Exp]
+         | Sin [Exp]
+         | Cos [Exp]
            deriving (Eq,Show)
 
 -- Ord might need a specific declaration.
