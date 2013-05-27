@@ -37,7 +37,7 @@ args :: REPLParser [Exp]
 args = many ((symbol <|> sexp) <* spaces)
 
 symbol :: REPLParser Exp
-symbol = number <|> (flip FunCall [] <$> function)
+symbol = number <|> x <|> y <|> z <|> (flip FunCall [] <$> function)
 
 number :: REPLParser Exp
 number = do
@@ -52,13 +52,11 @@ digits = (++) <$> whole <*> option "" dec
     where whole = many1 digit
           dec   = (:) <$> char '.' <*> whole
 
-{-}
 x :: REPLParser Exp
-x = char 'x' *> fmap (Val . head) getState
+x = char 'x' >> fmap (Val . head) (getState >>= registers)
 
 y :: REPLParser Exp
-y = char 'y' *> fmap (Val . (!! 1)) getState
+y = char 'y' >> fmap (Val . (!! 1)) (getState >>= registers)
 
 z :: REPLParser Exp
-z = char 'z' *> fmap (Val . (!! 2)) getState
--}
+z = char 'z' >> fmap (Val . (!! 2)) (getState >>= registers)

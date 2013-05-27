@@ -10,6 +10,8 @@ import Control.Monad
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Maybe
 
+import qualified Data.Map as M
+
 ---
 
 main :: IO ()
@@ -40,7 +42,16 @@ registerVals = get >>= registers >>= \rs -> do
   liftIO $ putStrLn $ "z: " ++ show (rs !! 2)
 
 help :: StateT REPLState IO ()
-help = liftIO $ putStrLn "Help message here."
+help = get >>= builtinMap >>= \bs -> liftIO $ do
+  let names = M.foldr (\f acc -> funcName f : acc) [] bs
+  putStrLn "Lispy REPL Help"
+  putStrLn "Available functions:"
+  putStrLn $ "  [ " ++ unwords names ++ " ]"
+  putStrLn "Other commands:"
+  putStrLn " x -> Use the x register."
+  putStrLn " y -> Use the y register."
+  putStrLn " z -> Use the z register."
+  putStrLn " r -> View the current values of all registers."
 
 rpn :: REPLState -> String -> Either String Value
 rpn rs s = case parseExp rs s of
