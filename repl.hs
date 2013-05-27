@@ -1,10 +1,11 @@
 -- Simple s-expression repl.
 
+import REPL.Eval
 import REPL.Base
+import REPL.Utils
 import REPL.Types
 import REPL.Parser
 
-import System.IO (stdout, hFlush)
 import Control.Monad
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Maybe
@@ -12,20 +13,34 @@ import Control.Monad.Trans.Maybe
 ---
 
 main :: IO ()
-main = void $ runStateT run initialState
+main = do
+  putStrLn "Welcome to a lispy REPL. Type `h` for help."
+  void $ runStateT run initialState
 
 run :: StateT REPLState IO ()
 run = forever $ do
   putStr' "> "
   input <- liftIO $ runMaybeT (getLine' >>= nest [])
   case input of
-    Nothing -> putStrLn' ">>> Too many right parentheses."
-    Just [] -> return ()
-    Just cs -> get >>= \rs -> do
+    Nothing  -> putStrLn' ">>> Too many right parentheses."
+    Just []  -> return ()
+    Just "r" -> registerVals
+    Just "h" -> help
+    Just cs  -> get >>= \rs -> do
                   output <- case rpn rs cs of
                               Left err -> return err
                               Right v  -> inject v >> return (show v)
                   putStrLn' $ ">>> " ++ output
+
+-- | The current values of the three registers.
+registerVals :: StateT REPLState IO ()
+registerVals = get >>= registers >>= \rs -> do
+  liftIO $ putStrLn $ "x: " ++ show (rs !! 0)
+  liftIO $ putStrLn $ "y: " ++ show (rs !! 1)
+  liftIO $ putStrLn $ "z: " ++ show (rs !! 2)
+
+help :: StateT REPLState IO ()
+help = liftIO $ putStrLn "Help message here."
 
 rpn :: REPLState -> String -> Either String Value
 rpn rs s = case parseExp rs s of
@@ -64,12 +79,3 @@ indent p (_:ns)  = indent (p + 1) ns
 pop :: ([Int],Int) -> Maybe [Int]
 pop (ls,rs) | rs > length ls = Nothing
             | otherwise      = Just $ drop rs ls
-
-putStr' :: MonadIO m => String -> m ()
-putStr' s = liftIO (putStr s >> hFlush stdout)
-
-putStrLn' :: MonadIO m => String -> m ()
-putStrLn' s = putStr' $ s ++ "\n"
-
-getLine' :: MaybeT IO String
-getLine' = liftIO getLine

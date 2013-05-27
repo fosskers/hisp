@@ -1,71 +1,16 @@
-module REPL.Base
-    ( initialState
-    , inject
-    , e ) where
+module REPL.Base where
+
+import Control.Monad.State.Lazy
 
 import REPL.Types
-import Control.Monad.State.Lazy
+import REPL.Builtins
 
 ---
 
 initialState :: REPLState
-initialState = [I 0, I 0, I 0]
+initialState = ([I 0, I 0, I 0], builtins)
 
--- | Inject a new Value into the REPLState.
+-- | Inject a new Value into the REPLState registers.
 -- Signature will always stay the same while the implementation changes :)
 inject :: Monad m => Value -> StateT REPLState m ()
-inject v = get >>= \rs -> unless (v `elem` rs) (put $ take 3 (v : rs))
-
--- | The Evaluation Function
-e :: Exp -> Either String Value
-e (Val a)  = return a
-
-e (Add [_]) = tooFew Add
-e (Add ns)  = foldE (+) 0 ns
-
-e (Mul [_]) = tooFew Mul
-e (Mul ns)  = foldE (*) 1 ns
-
-e (Sub [_])    = tooFew Sub
-e (Sub (n:ns)) = e n >>= \n' -> foldE (-) n' ns
-
-e (Div (n:ns)) = e n >>= \n' -> foldE (/) n' ns
-
-e (Pow [_])    = tooFew Pow
-e (Pow (n:ns)) = e n >>= \n' -> foldE (^) n' ns
-
-e (Fac [n]) = e n >>= \n' -> return (product [1 .. n'])
-e (Fac [])  = tooFew Fac
-e (Fac _)   = tooMany Fac
-
-e (Sin [n]) = sin `fmap` e n
-e (Sin [])  = tooFew Sin
-e (Sin _)   = tooMany Sin
-
-e (Cos [n]) = cos `fmap` e n
-e (Cos [])  = tooFew Cos
-e (Cos _)   = tooMany Cos
-
----
-
-foldE :: (Value -> Value -> Value) -> Value -> [Exp] -> Either String Value
-foldE f = foldM (\acc n' -> f acc `fmap` e n')
-
-replError :: (a -> Exp) -> String -> Either String b
-replError f msg = Left $ msg ++ "{ " ++ symbol (f undefined) ++ " }"
-
-tooMany :: (a -> Exp) -> Either String b
-tooMany f = replError f "Too many args to "
-
-tooFew :: (a -> Exp) -> Either String b
-tooFew  f = replError f "Too few args to "
-
-symbol :: Exp -> String
-symbol (Add _) = "+"
-symbol (Mul _) = "*"
-symbol (Sub _) = "-"
-symbol (Div _) = "/"
-symbol (Pow _) = "^"
-symbol (Fac _) = "!"
-symbol (Sin _) = "sin"
-symbol (Cos _) = "cos"
+inject v = get >>= \(rs,bs) -> unless (v `elem` rs) (put (take 3 (v : rs),bs))

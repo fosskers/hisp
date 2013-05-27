@@ -1,10 +1,14 @@
 module REPL.Parser ( parseExp ) where
 
+import Prelude hiding (lookup)
+
 import Text.ParserCombinators.Parsec hiding ((<|>))
 import Text.Parsec.Prim (Parsec)
-import Control.Applicative
+import Data.Map.Lazy    (lookup)
+import Control.Applicative hiding (many)
 
 import REPL.Types
+import REPL.Builtins (voidFun)
 
 ---
 
@@ -14,26 +18,29 @@ parseExp :: REPLState -> String -> Either ParseError Exp
 parseExp rs = runParser (symbol <|> sexp) rs "(s-exp)"
 
 sexp :: REPLParser Exp
-sexp = spaces *> char '(' *> spaces *> prim <*> args <* char ')'
+sexp = spaces *> char '(' *> spaces *> funCall <*> args <* char ')'
 
-prim :: REPLParser ([Exp] -> Exp)
-prim = (op <|> number) <* spaces
+funCall :: REPLParser ([Exp] -> Exp)
+funCall = FunCall <$> function <* spaces
+
+-- | Any set of characters in function position will be parsed
+-- as a function call, but a special void function will be returned if
+-- the parsed function doesn't actually exist.
+function :: REPLParser Function
+function = getState >>= builtinMap >>= \m -> do
+  name <- many1 $ noneOf "\n() "
+  case name `lookup` m of
+    Nothing -> return voidFun
+    Just f  -> return f
 
 args :: REPLParser [Exp]
-args = many1 ((sexp <|> symbol) <* spaces)
+args = many ((symbol <|> sexp) <* spaces)
 
 symbol :: REPLParser Exp
-symbol = choice [ x
-                , y
-                , z
-                , number'
-                , sPi ]
+symbol = number <|> (flip FunCall [] <$> function)
 
-number :: REPLParser ([Exp] -> Exp)
-number = const `fmap` number'
-
-number' :: REPLParser Exp
-number' = do
+number :: REPLParser Exp
+number = do
   ds <- digits
   let val = if '.' `elem` ds
             then D (read ds :: Double)
@@ -45,16 +52,7 @@ digits = (++) <$> whole <*> option "" dec
     where whole = many1 digit
           dec   = (:) <$> char '.' <*> whole
 
-op :: REPLParser ([Exp] -> Exp)
-op = Add <$ char '+'
-     <|> Sub <$ char '-'
-     <|> Mul <$ char '*'
-     <|> Div <$ char '/'
-     <|> Pow <$ char '^'
-     <|> Fac <$ char '!'
-     <|> Sin <$ string "sin"
-     <|> Cos <$ string "cos"
-
+{-}
 x :: REPLParser Exp
 x = char 'x' *> fmap (Val . head) getState
 
@@ -63,6 +61,4 @@ y = char 'y' *> fmap (Val . (!! 1)) getState
 
 z :: REPLParser Exp
 z = char 'z' *> fmap (Val . (!! 2)) getState
-
-sPi :: REPLParser Exp
-sPi = Val pi <$ string "pi"
+-}

@@ -1,24 +1,45 @@
 module REPL.Types
     ( Value(..)
     , Exp(..)
-    , REPLState ) where
+    , REPLState
+    , ArgNum(..)
+    , Function(..)
+    , registers
+    , builtinMap ) where
 
 import Control.Arrow (first,second)
+import Data.List     (intersperse)
+import Data.Map      (Map)
+
+import REPL.Utils (tau)
 
 ---
 
-type REPLState = [Value]
+type REPLState = ([Value], Map String Function)
 
-data Exp = Val Value
-         | Add [Exp]
-         | Sub [Exp]
-         | Mul [Exp]
-         | Div [Exp]
-         | Pow [Exp]
-         | Fac [Exp]
-         | Sin [Exp]
-         | Cos [Exp]
-           deriving (Eq,Show)
+registers :: Monad m => REPLState -> m [Value]
+registers = return . fst
+
+builtinMap :: Monad m => REPLState -> m (Map String Function)
+builtinMap = return . snd
+
+data ArgNum = None | Exactly Int | AtLeast Int deriving (Eq,Show)
+
+-- Make a Show instance for this?
+data Function = Function { funcName :: String
+                         , argNum   :: ArgNum
+                         , apply    :: [Exp] -> Either String Value }
+
+instance Show Function where
+    show f = "(lambda [" ++ as ++ "] (" ++ funcName f ++ " " ++ as ++ "))"
+        where as = argString $ argNum f
+
+argString :: ArgNum -> String
+argString None        = ""
+argString (Exactly i) = intersperse ' ' (take i ['a'..'z'])
+argString (AtLeast i) = intersperse ' ' (take i ['a'..'z']) ++ ".."
+
+data Exp = Val Value | FunCall Function [Exp] deriving (Show)
 
 -- Ord might need a specific declaration.
 -- Or else all I's might come before any D's regardless of number.
@@ -62,7 +83,7 @@ instance Integral Value where
 
 -- Yes, boilerplate!
 instance Floating Value where
-    pi = D pi  -- Tau is better.
+    pi = D $ tau / 2
 
     exp (D d) = D $ exp d
     exp x     = exp $ asD x
