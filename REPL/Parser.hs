@@ -6,7 +6,7 @@ import Prelude                       hiding (lookup)
 import Text.Parsec.Prim (Parsec, modifyState)
 import Data.Map.Lazy    (lookup,insert)
 
-import REPL.Eval     (none)
+import REPL.Eval     (none,e)
 import REPL.Builtins (voidFun)
 import REPL.Types
 
@@ -58,7 +58,17 @@ digits = (++) <$> whole <*> option "" dec
 define :: REPLParser Exp
 define = do
   string "define" >> spaces
+  name  <- many1 (noneOf "()\n ") <* spaces
+  inner <- atom
+  modifyState $ insert name $ Function name None (const $ e inner)
+  return (Val 1)
+
+{-}
+define :: REPLParser Exp
+define = do
+  string "define" >> spaces
   name <- many1 (noneOf "()\n ") <* spaces
   (Val value) <- number
   modifyState $ insert name $ Function name None (none value)
   return (Val value)
+-}
