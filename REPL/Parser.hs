@@ -1,22 +1,24 @@
 module REPL.Parser ( parseExp ) where
 
-import Prelude hiding (lookup)
-
 import Text.ParserCombinators.Parsec hiding ((<|>))
 import Control.Applicative           hiding (many)
+import Prelude                       hiding (lookup)
 import Text.Parsec.Prim (Parsec, modifyState)
 import Data.Map.Lazy    (lookup,insert)
 
-import REPL.Eval (none)
-import REPL.Types
+import REPL.Eval     (none)
 import REPL.Builtins (voidFun)
+import REPL.Types
 
 ---
 
 type REPLParser = Parsec String REPLState
 
-parseExp :: REPLState -> String -> Either ParseError Exp
-parseExp rs = runParser (symbol <|> sexp) rs "(s-exp)"
+parseExp :: REPLState -> String -> Either ParseError (Exp,REPLState)
+parseExp rs = runParser ((,) <$> atom <*> getState) rs "(s-exp)"
+
+atom :: REPLParser Exp
+atom = symbol <|> sexp
 
 sexp :: REPLParser Exp
 sexp = spaces *> char '(' *> spaces *> (define <|> funCall) <* char ')'
@@ -35,7 +37,7 @@ function = getState >>= builtinMap >>= \m -> do
     Just f  -> return f
 
 args :: REPLParser [Exp]
-args = many ((symbol <|> sexp) <* spaces)
+args = many (atom <* spaces)
 
 symbol :: REPLParser Exp
 symbol = number <|> (flip FunCall [] <$> function)

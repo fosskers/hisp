@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 -- Simple s-expression repl.
 
 import REPL.Eval
@@ -6,7 +8,6 @@ import REPL.Utils
 import REPL.Types
 import REPL.Parser
 
-import Control.Monad
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Maybe
 
@@ -30,7 +31,7 @@ run = forever $ do
     Just cs  -> get >>= \rs -> do
                   output <- case rpn rs cs of
                               Left err -> return err
-                              Right v  -> inject v >> return (show v)
+                              Right (v,rs') -> put rs' >> inject v >> return (show v)
                   putStrLn' $ ">>> " ++ output
 
 help :: StateT REPLState IO ()
@@ -41,11 +42,10 @@ help = get >>= builtinMap >>= \bs -> liftIO $ do
   putStrLn $ "  [ " ++ unwords names ++ " ]"
   putStrLn "Note that `x` stores what was calculated last."
 
--- The state is disappearing!
-rpn :: REPLState -> String -> Either String Value
+rpn :: REPLState -> String -> Either String (Value,REPLState)
 rpn rs s = case parseExp rs s of
-          Left err   -> Left $ "Syntax Error\n" ++ show err
-          Right sexp -> e sexp
+          Left err -> Left $ "Syntax Error\n" ++ show err
+          Right (sexp,rs') -> (,rs') `fmap` e sexp
 
 -- Only notes the locations of left parens.
 nest :: [Int] -> String -> MaybeT IO String
