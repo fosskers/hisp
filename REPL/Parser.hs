@@ -30,14 +30,14 @@ function :: REPLParser Function
 function = getState >>= builtinMap >>= \m -> do
   name <- many1 $ noneOf "\n() "
   case name `lookup` m of
-    Nothing -> return voidFun
+    Nothing -> return $ voidFun name
     Just f  -> return f
 
 args :: REPLParser [Exp]
 args = many ((symbol <|> sexp) <* spaces)
 
 symbol :: REPLParser Exp
-symbol = number <|> x <|> y <|> z <|> (flip FunCall [] <$> function)
+symbol = number <|> (flip FunCall [] <$> function)
 
 number :: REPLParser Exp
 number = do
@@ -51,12 +51,3 @@ digits :: REPLParser String
 digits = (++) <$> whole <*> option "" dec
     where whole = many1 digit
           dec   = (:) <$> char '.' <*> whole
-
-x :: REPLParser Exp
-x = char 'x' >> fmap (Val . head) (getState >>= registers)
-
-y :: REPLParser Exp
-y = char 'y' >> fmap (Val . (!! 1)) (getState >>= registers)
-
-z :: REPLParser Exp
-z = char 'z' >> fmap (Val . (!! 2)) (getState >>= registers)

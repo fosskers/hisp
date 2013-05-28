@@ -28,6 +28,10 @@ one :: (Value -> a) -> [Exp] -> Either String a
 one f [n] = f `fmap` e n
 one _ _   = error "You should never see this."
 
+-- | For functions that take no arguments.
+none :: Monad m => a -> b -> m a
+none = const . return
+
 foldE :: (Value -> Value -> Value) -> Value -> [Exp] -> Either String Value
 foldE f = foldM (\acc n' -> f acc `fmap` e n')
 

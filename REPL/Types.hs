@@ -4,7 +4,6 @@ module REPL.Types
     , REPLState
     , ArgNum(..)
     , Function(..)
-    , registers
     , builtinMap ) where
 
 import Control.Arrow (first,second)
@@ -15,13 +14,13 @@ import REPL.Utils (tau)
 
 ---
 
-type REPLState = ([Value], Map String Function)
+type REPLState = Map String Function
 
-registers :: Monad m => REPLState -> m [Value]
-registers = return . fst
+--registers :: Monad m => REPLState -> m [Value]
+--registers = return . fst
 
 builtinMap :: Monad m => REPLState -> m (Map String Function)
-builtinMap = return . snd
+builtinMap = return
 
 data ArgNum = None | Exactly Int | AtLeast Int deriving (Eq,Show)
 

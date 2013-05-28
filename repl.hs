@@ -26,7 +26,6 @@ run = forever $ do
   case input of
     Nothing  -> putStrLn' ">>> Too many right parentheses."
     Just []  -> return ()
-    Just "r" -> registerVals
     Just "h" -> help
     Just cs  -> get >>= \rs -> do
                   output <- case rpn rs cs of
@@ -34,24 +33,13 @@ run = forever $ do
                               Right v  -> inject v >> return (show v)
                   putStrLn' $ ">>> " ++ output
 
--- | The current values of the three registers.
-registerVals :: StateT REPLState IO ()
-registerVals = get >>= registers >>= \rs -> do
-  liftIO $ putStrLn $ "x: " ++ show (rs !! 0)
-  liftIO $ putStrLn $ "y: " ++ show (rs !! 1)
-  liftIO $ putStrLn $ "z: " ++ show (rs !! 2)
-
 help :: StateT REPLState IO ()
 help = get >>= builtinMap >>= \bs -> liftIO $ do
   let names = M.foldr (\f acc -> funcName f : acc) [] bs
   putStrLn "Lispy REPL Help"
   putStrLn "Available functions:"
   putStrLn $ "  [ " ++ unwords names ++ " ]"
-  putStrLn "Other commands:"
-  putStrLn " x -> Use the x register."
-  putStrLn " y -> Use the y register."
-  putStrLn " z -> Use the z register."
-  putStrLn " r -> View the current values of all registers."
+  putStrLn "Note that `x` stores what was calculated last."
 
 rpn :: REPLState -> String -> Either String Value
 rpn rs s = case parseExp rs s of

@@ -24,8 +24,10 @@ builtins = fromList $ map (\f -> (funcName f, f))
            , Function "log" (Exactly 1) (one log)
            , Function "exp" (Exactly 1) (one exp)
            , Function "sqrt" (Exactly 1) (one sqrt)
-           , Function "tau" None (const $ return tau)
-           , Function "pi" None (const $ return pi) ]
+           , Function "tau" None (none tau)
+           , Function "pi" None (none pi)
+           , Function "x" None (none 0) ]
 
-voidFun :: Function
-voidFun = Function "void" (AtLeast 0) (const $ Left "Non-existant function called.")
+voidFun :: String -> Function
+voidFun s = Function "void" (AtLeast 0)
+            (const $ Left $ "{{ " ++ s ++ " }} is not a valid symbol.")
