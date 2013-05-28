@@ -9,12 +9,12 @@ import REPL.Builtins
 
 ---
 
-initialState :: REPLState
+initialState :: Scope
 initialState = builtins
 
--- | Inject a new Value into the REPLState registers.
+-- | Inject a new Value into Scope.
 -- Signature will always stay the same while the implementation changes :)
-inject :: Monad m => Value -> StateT REPLState m ()
+inject :: Monad m => Value -> StateT Scope m ()
 inject v = modify $ insert "x" (newX v)
 
 newX :: Value -> Function

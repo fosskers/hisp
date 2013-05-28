@@ -1,10 +1,10 @@
 module REPL.Types
     ( Value(..)
     , Exp(..)
-    , REPLState
+    , Scope
     , ArgNum(..)
     , Function(..)
-    , builtinMap ) where
+    , scope ) where
 
 import Control.Arrow (first,second)
 import Data.List     (intersperse)
@@ -14,10 +14,10 @@ import REPL.Utils (tau)
 
 ---
 
-type REPLState = Map String Function
+type Scope = Map String Function
 
-builtinMap :: Monad m => REPLState -> m (Map String Function)
-builtinMap = return
+scope :: Monad m => Scope -> m (Map String Function)
+scope = return
 
 data ArgNum = None | Exactly Int | AtLeast Int deriving (Eq,Show)
 

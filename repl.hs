@@ -20,7 +20,7 @@ main = do
   putStrLn "Welcome to a lispy REPL. Type `h` for help."
   void $ runStateT run initialState
 
-run :: StateT REPLState IO ()
+run :: StateT Scope IO ()
 run = forever $ do
   putStr' "> "
   input <- liftIO $ runMaybeT (getLine' >>= nest [])
@@ -34,15 +34,18 @@ run = forever $ do
                               Right (v,rs') -> put rs' >> inject v >> return (show v)
                   putStrLn' $ ">>> " ++ output
 
-help :: StateT REPLState IO ()
+help :: StateT Scope IO ()
 help = get >>= builtinMap >>= \bs -> liftIO $ do
   let names = M.foldr (\f acc -> funcName f : acc) [] bs
-  putStrLn "Lispy REPL Help"
-  putStrLn "Available functions:"
-  putStrLn $ "  [ " ++ unwords names ++ " ]"
-  putStrLn "Note that `x` stores what was calculated last."
+  mapM_ putStrLn [ "Lispy REPL Help"
+                 , "Available functions:"
+                 , "  [ " ++ unwords names ++ " ]"
+                 , "1. `x` stores what was calculated last."
+                 , "2. You can define your own symbols with `define`:"
+                 , "     (define foo 5)"
+                 , "     (define bar (* foo 2))" ]
 
-rpn :: REPLState -> String -> Either String (Value,REPLState)
+rpn :: Scope -> String -> Either String (Value,Scope)
 rpn rs s = case parseExp rs s of
           Left err -> Left $ "Syntax Error\n" ++ show err
           Right (sexp,rs') -> (,rs') `fmap` e sexp
