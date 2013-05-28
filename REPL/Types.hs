@@ -16,15 +16,11 @@ import REPL.Utils (tau)
 
 type REPLState = Map String Function
 
---registers :: Monad m => REPLState -> m [Value]
---registers = return . fst
-
 builtinMap :: Monad m => REPLState -> m (Map String Function)
 builtinMap = return
 
 data ArgNum = None | Exactly Int | AtLeast Int deriving (Eq,Show)
 
--- Make a Show instance for this?
 data Function = Function { funcName :: String
                          , argNum   :: ArgNum
                          , apply    :: [Exp] -> Either String Value }

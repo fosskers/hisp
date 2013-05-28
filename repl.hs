@@ -41,6 +41,7 @@ help = get >>= builtinMap >>= \bs -> liftIO $ do
   putStrLn $ "  [ " ++ unwords names ++ " ]"
   putStrLn "Note that `x` stores what was calculated last."
 
+-- The state is disappearing!
 rpn :: REPLState -> String -> Either String Value
 rpn rs s = case parseExp rs s of
           Left err   -> Left $ "Syntax Error\n" ++ show err

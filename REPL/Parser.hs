@@ -3,10 +3,11 @@ module REPL.Parser ( parseExp ) where
 import Prelude hiding (lookup)
 
 import Text.ParserCombinators.Parsec hiding ((<|>))
-import Text.Parsec.Prim (Parsec)
-import Data.Map.Lazy    (lookup)
-import Control.Applicative hiding (many)
+import Control.Applicative           hiding (many)
+import Text.Parsec.Prim (Parsec, modifyState)
+import Data.Map.Lazy    (lookup,insert)
 
+import REPL.Eval (none)
 import REPL.Types
 import REPL.Builtins (voidFun)
 
@@ -18,10 +19,10 @@ parseExp :: REPLState -> String -> Either ParseError Exp
 parseExp rs = runParser (symbol <|> sexp) rs "(s-exp)"
 
 sexp :: REPLParser Exp
-sexp = spaces *> char '(' *> spaces *> funCall <*> args <* char ')'
+sexp = spaces *> char '(' *> spaces *> (define <|> funCall) <* char ')'
 
-funCall :: REPLParser ([Exp] -> Exp)
-funCall = FunCall <$> function <* spaces
+funCall :: REPLParser Exp
+funCall = FunCall <$> (function <* spaces) <*> args
 
 -- | Any set of characters in function position will be parsed
 -- as a function call, but a special void function will be returned if
@@ -51,3 +52,11 @@ digits :: REPLParser String
 digits = (++) <$> whole <*> option "" dec
     where whole = many1 digit
           dec   = (:) <$> char '.' <*> whole
+
+define :: REPLParser Exp
+define = do
+  string "define" >> spaces
+  name <- many1 (noneOf "()\n ") <* spaces
+  (Val value) <- number
+  modifyState $ insert name $ Function name None (none value)
+  return (Val value)
