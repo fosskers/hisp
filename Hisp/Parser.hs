@@ -1,4 +1,4 @@
-module REPL.Parser ( parseExp ) where
+module Hisp.Parser ( parseExp ) where
 
 import Text.ParserCombinators.Parsec hiding ((<|>))
 import Control.Applicative           hiding (many)
@@ -6,9 +6,9 @@ import Prelude                       hiding (lookup)
 import Text.Parsec.Prim (Parsec, modifyState)
 import Data.Map.Lazy    (lookup,insert)
 
-import REPL.Eval     (e)
-import REPL.Builtins (voidFun)
-import REPL.Types
+import Hisp.Eval     (e)
+import Hisp.Builtins (voidFun)
+import Hisp.Types
 
 ---
 
@@ -30,7 +30,7 @@ funCall = FunCall <$> (function <* spaces) <*> args
 -- as a function call, but a special void function will be returned if
 -- the parsed function doesn't actually exist.
 function :: REPLParser Function
-function = getState >>= scope >>= \s -> do
+function = getState >>= global >>= \s -> do
   name <- many1 $ noneOf "\n() "
   case name `lookup` s of
     Nothing -> return $ voidFun name
@@ -59,6 +59,6 @@ define :: REPLParser Exp
 define = do
   string "define" >> spaces
   name  <- many1 (noneOf "()\n ") <* spaces
-  inner <- atom
+  inner <- atom <* spaces
   modifyState $ insert name $ Function name None (const $ e inner)
   return $ Val 1

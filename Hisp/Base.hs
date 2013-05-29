@@ -1,11 +1,11 @@
-module REPL.Base where
+module Hisp.Base where
 
 import Control.Monad.State.Lazy
 import Data.Map.Lazy (insert)
 
-import REPL.Eval (none)
-import REPL.Types
-import REPL.Builtins
+import Hisp.Eval (none)
+import Hisp.Types
+import Hisp.Builtins
 
 ---
 

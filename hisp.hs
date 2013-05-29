@@ -2,11 +2,11 @@
 
 -- Simple s-expression repl.
 
-import REPL.Eval
-import REPL.Base
-import REPL.Utils
-import REPL.Types
-import REPL.Parser
+import Hisp.Eval
+import Hisp.Base
+import Hisp.Utils
+import Hisp.Types
+import Hisp.Parser
 
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Maybe
@@ -17,7 +17,7 @@ import qualified Data.Map as M
 
 main :: IO ()
 main = do
-  putStrLn "Welcome to a lispy REPL. Type `h` for help."
+  putStrLn "Welcome to the Hisp REPL. Type `h` for help."
   void $ runStateT run initialState
 
 run :: StateT Scope IO ()
@@ -35,9 +35,9 @@ run = forever $ do
                   putStrLn' $ ">>> " ++ output
 
 help :: StateT Scope IO ()
-help = get >>= builtinMap >>= \bs -> liftIO $ do
+help = get >>= global >>= \bs -> liftIO $ do
   let names = M.foldr (\f acc -> funcName f : acc) [] bs
-  mapM_ putStrLn [ "Lispy REPL Help"
+  mapM_ putStrLn [ "Hisp REPL Help"
                  , "Available functions:"
                  , "  [ " ++ unwords names ++ " ]"
                  , "1. `x` stores what was calculated last."

@@ -1,8 +1,8 @@
-module REPL.Eval where
+module Hisp.Eval where
 
 import Control.Monad (foldM)
 
-import REPL.Types
+import Hisp.Types
 
 ---
 

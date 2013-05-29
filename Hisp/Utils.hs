@@ -1,4 +1,4 @@
-module REPL.Utils where
+module Hisp.Utils where
 
 import Control.Monad.Trans
 import System.IO (stdout, hFlush)

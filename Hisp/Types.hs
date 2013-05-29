@@ -1,23 +1,26 @@
-module REPL.Types
+module Hisp.Types
     ( Value(..)
     , Exp(..)
     , Scope
     , ArgNum(..)
     , Function(..)
-    , scope ) where
+    , global ) where
 
 import Control.Arrow (first,second)
 import Data.List     (intersperse)
 import Data.Map      (Map)
 
-import REPL.Utils (tau)
+import Hisp.Utils (tau)
 
 ---
 
 type Scope = Map String Function
 
-scope :: Monad m => Scope -> m (Map String Function)
-scope = return
+global :: Monad m => Scope -> m (Map String Function)
+global = return
+
+--local :: Monad m => Scope -> m (Map String Function)
+--local = undefined
 
 data ArgNum = None | Exactly Int | AtLeast Int deriving (Eq,Show)
 

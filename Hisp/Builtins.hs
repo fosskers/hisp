@@ -1,10 +1,10 @@
-module REPL.Builtins where
+module Hisp.Builtins where
 
 import Data.Map (Map, fromList)
 
-import REPL.Eval
-import REPL.Types
-import REPL.Utils (tau)
+import Hisp.Eval
+import Hisp.Types
+import Hisp.Utils (tau)
 
 ---
 
