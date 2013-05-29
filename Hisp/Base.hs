@@ -18,4 +18,8 @@ inject :: Monad m => Value -> StateT Scope m ()
 inject v = modify $ insert "x" (newX v)
 
 newX :: Value -> Function
-newX x = Function "x" None (none x)
+newX x = Function "x" (Exactly 0 []) (none x)
+
+-- | Don't you be passin' any empty lists, now.
+popScope :: [Scope] -> [Scope]
+popScope = tail

@@ -1,16 +1,40 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Hisp.Types
     ( Value(..)
     , Exp(..)
     , Scope
-    , ArgNum(..)
+    , Args(..)
     , Function(..)
-    , global ) where
+    , Evaluate
+    , global
+    , eval
+    , failure) where
 
+import Control.Monad.State.Lazy
+import Control.Monad.Error
 import Control.Arrow (first,second)
 import Data.List     (intersperse)
 import Data.Map      (Map)
 
 import Hisp.Utils (tau)
+
+---
+
+newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
+  deriving ( Monad, MonadError EvalError, MonadState [Scope], Functor)
+
+data EvalError = M String deriving (Eq,Show)
+
+instance Error EvalError where
+    noMsg  = strMsg "No error message given."
+    strMsg = M
+
+eval :: Evaluate a -> [Scope] -> Either EvalError a
+eval a s = evalState (runErrorT $ runE a) s
+
+failure :: String -> Evaluate a
+failure = throwError . strMsg
 
 ---
 
@@ -22,22 +46,24 @@ global = return
 --local :: Monad m => Scope -> m (Map String Function)
 --local = undefined
 
-data ArgNum = None | Exactly Int | AtLeast Int deriving (Eq,Show)
+data Args = Exactly Int [String] | AtLeast Int deriving (Eq,Show)
 
 data Function = Function { funcName :: String
-                         , argNum   :: ArgNum
-                         , apply    :: [Exp] -> Either String Value }
+                         , funcArgs :: Args
+                         , apply    :: [Exp] -> Evaluate Value }
 
 instance Show Function where
     show f = "(lambda [" ++ as ++ "] (" ++ funcName f ++ " " ++ as ++ "))"
-        where as = argString $ argNum f
+        where as = argString $ funcArgs f
 
-argString :: ArgNum -> String
-argString None        = ""
-argString (Exactly i) = intersperse ' ' (take i ['a'..'z'])
-argString (AtLeast i) = intersperse ' ' (take i ['a'..'z']) ++ ".."
+argString :: Args -> String
+argString (Exactly i _) = intersperse ' ' (take i ['a'..'z'])
+argString (AtLeast i)   = intersperse ' ' (take i ['a'..'z']) ++ ".."
 
-data Exp = Val Value | FunCall Function [Exp] deriving (Show)
+noArgs :: Args
+noArgs = Exactly 0 []
+
+data Exp = Val Value | FunCall String [Exp] deriving (Show)
 
 -- Ord might need a specific declaration.
 -- Or else all I's might come before any D's regardless of number.

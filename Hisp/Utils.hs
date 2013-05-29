@@ -16,3 +16,6 @@ getLine' = liftIO getLine
 
 tau :: Floating a => a
 tau = 6.283185307179586
+
+toN :: (Enum a, Num a) => a -> [a]
+toN n = [1 .. n]

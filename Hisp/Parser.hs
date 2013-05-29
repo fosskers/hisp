@@ -1,4 +1,4 @@
-module Hisp.Parser ( parseExp ) where
+module Hisp.Parser where  --( parseExp ) where
 
 import Text.ParserCombinators.Parsec hiding ((<|>))
 import Control.Applicative           hiding (many)
@@ -29,12 +29,8 @@ funCall = FunCall <$> (function <* spaces) <*> args
 -- | Any set of characters in function position will be parsed
 -- as a function call, but a special void function will be returned if
 -- the parsed function doesn't actually exist.
-function :: REPLParser Function
-function = getState >>= global >>= \s -> do
-  name <- many1 $ noneOf "\n() "
-  case name `lookup` s of
-    Nothing -> return $ voidFun name
-    Just f  -> return f
+function :: REPLParser String
+function = many1 $ noneOf "\n() "
 
 args :: REPLParser [Exp]
 args = many (atom <* spaces)
@@ -58,7 +54,12 @@ digits = (++) <$> whole <*> option "" dec
 define :: REPLParser Exp
 define = do
   string "define" >> spaces
-  name  <- many1 (noneOf "()\n ") <* spaces
-  inner <- atom <* spaces
-  modifyState $ insert name $ Function name None (const $ e inner)
+  name   <- many1 (noneOf "()\n ") <* spaces
+  params <- option [] params <* spaces
+  body   <- atom <* spaces
+  let f = Function name (Exactly (length params) params) (const $ e body)
+  modifyState $ insert name f
   return $ Val 1
+
+params :: REPLParser [String]
+params = char '[' *> spaces *> many (many1 (noneOf "\n[] ") <* spaces) <* char ']'
