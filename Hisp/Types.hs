@@ -1,19 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}  -- For those MonadState signatures...
 
-module Hisp.Types
-    ( Value(..)
-    , Exp(..)
-    , Scope
-    , Args(..)
-    , Function(..)
-    , Evaluate
-    , EvalError(..)
-    , global
-    , eval
-    , failure
-    , noArgs
-    , popScope ) where
+module Hisp.Types where
 
 import Control.Monad.State.Lazy
 import Control.Monad.Error
@@ -70,6 +58,10 @@ argString (AtLeast i)   = intersperse ' ' (take i ['a'..'z']) ++ ".."
 
 noArgs :: Args
 noArgs = Exactly 0 []
+
+necArgs :: Args -> String
+necArgs (Exactly i _) = "exactly " ++ show i
+necArgs (AtLeast i)   = "at least " ++ show i
 
 data Exp = Val Value | FunCall String [Exp] deriving (Show)
 

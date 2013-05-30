@@ -4,9 +4,9 @@ import Text.ParserCombinators.Parsec hiding ((<|>))
 import Control.Applicative           hiding (many)
 import Prelude                       hiding (lookup)
 import Text.Parsec.Prim (Parsec, modifyState)
-import Data.Map.Lazy    (lookup,insert)
+import Data.Map.Lazy    (insert)
 
-import Hisp.Eval     (e)
+import Hisp.Eval (e)
 import Hisp.Types
 
 ---
@@ -57,7 +57,7 @@ define = do
   ps   <- option [] params <* spaces
   body <- atom <* spaces
   let f = Function name (Exactly (length ps) ps) (const $ e body)
-  modifyState $ (\[s] -> insert name f s : [])
+  modifyState $ (\[s] -> [insert name f s])
   return $ Val 1
 
 params :: REPLParser [String]

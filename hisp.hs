@@ -44,7 +44,8 @@ help = global >>= \bs -> liftIO $ do
                  , "2. You can define your own functions with `define`:"
                  , "     (define foo 5)"
                  , "     (define bar (* foo 2))"
-                 , "     (define baz [a b] (+ a b))" ]
+                 , "     (define baz [a b] (+ a b))"
+                 , "3. Feel free to write expressions over multiple lines." ]
 
 parse :: String -> Evaluate Exp
 parse s = get >>= \rs -> case parseExp rs s of
