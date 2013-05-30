@@ -27,7 +27,3 @@ builtins = fromList $ map (\f -> (funcName f, f))
            , Function "tau"  noArgs (none tau)
            , Function "pi"   noArgs (none pi)
            , Function "x"    noArgs (none 0) ]
-
-voidFun :: String -> Function
-voidFun s = Function "void" (AtLeast 0)
-            (const $ Left $ "{{ " ++ s ++ " }} is not a valid symbol.")

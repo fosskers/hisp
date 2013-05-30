@@ -7,14 +7,13 @@ import Text.Parsec.Prim (Parsec, modifyState)
 import Data.Map.Lazy    (lookup,insert)
 
 import Hisp.Eval     (e)
-import Hisp.Builtins (voidFun)
 import Hisp.Types
 
 ---
 
-type REPLParser = Parsec String Scope
+type REPLParser = Parsec String [Scope]
 
-parseExp :: Scope -> String -> Either ParseError (Exp,Scope)
+parseExp :: [Scope] -> String -> Either ParseError (Exp,[Scope])
 parseExp rs = runParser ((,) <$> atom <*> getState) rs "(s-exp)"
 
 atom :: REPLParser Exp
@@ -54,11 +53,11 @@ digits = (++) <$> whole <*> option "" dec
 define :: REPLParser Exp
 define = do
   string "define" >> spaces
-  name   <- many1 (noneOf "()\n ") <* spaces
-  params <- option [] params <* spaces
-  body   <- atom <* spaces
-  let f = Function name (Exactly (length params) params) (const $ e body)
-  modifyState $ insert name f
+  name <- many1 (noneOf "()\n ") <* spaces
+  ps   <- option [] params <* spaces
+  body <- atom <* spaces
+  let f = Function name (Exactly (length ps) ps) (const $ e body)
+  modifyState $ (\[s] -> insert name f s : [])
   return $ Val 1
 
 params :: REPLParser [String]

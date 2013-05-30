@@ -1,8 +1,14 @@
-module Hisp.Eval where
+module Hisp.Eval
+    ( e
+    , one
+    , none
+    , foldE
+    , foldE1 ) where
 
 import Prelude hiding (lookup)
 import Control.Monad.State.Lazy
-import Data.Map.Lazy (lookup)
+import Data.Map.Lazy (lookup, fromList, empty)
+import Control.Applicative ((<*))
 
 import Hisp.Types
 
@@ -11,20 +17,25 @@ import Hisp.Types
 -- | The Evaluation Function
 e :: Exp -> Evaluate Value
 e (Val a)        = return a
-e (FunCall f es) = get >>= getFun f >>= \f' -> localScope f' es >> apply f' es
+e (FunCall f es) = get >>= function f >>= \f' ->
+                   argCheck f' es >> local f' es >> apply f' es <* popScope
 
 argCheck :: Function -> [Exp] -> Evaluate a
 argCheck f es | numOkay (funcArgs f) (length es) = return undefined
               | otherwise = failure . badArgs . funcName $ f
 
-getFun :: String -> [Scope] -> Evaluate Function
-getFun f [] = failure $ "{{ " ++ f ++ " }} is not a valid symbol in any scope."
-getFun f (s:ss) = case lookup f s of
-                    Nothing -> getFun f ss
-                    Just f' -> return f'
+function :: String -> [Scope] -> Evaluate Function
+function f [] = failure $ "{{ " ++ f ++ " }} is not a valid symbol in any scope."
+function f (s:ss) = case lookup f s of
+                      Nothing -> function f ss
+                      Just f' -> return f'
 
-localScope :: Function -> [Exp] -> Evaluate ()
-localScope = undefined
+-- | Add a local scope based on a function's namespace.
+local :: Function -> [Exp] -> Evaluate ()
+local (Function _ (AtLeast _) _) _     = modify (empty :)
+local (Function _ (Exactly _ ss) _) es = modify (ns :)
+    where ns = fromList $ zipWith toF ss es
+          toF s ex = (s, Function s noArgs (const $ e ex))
 
 numOkay :: Args -> Int -> Bool
 numOkay (Exactly i _) n = n == i

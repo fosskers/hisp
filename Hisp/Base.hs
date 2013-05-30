@@ -9,17 +9,13 @@ import Hisp.Builtins
 
 ---
 
-initialState :: Scope
-initialState = builtins
+initialState :: [Scope]
+initialState = [builtins]
 
 -- | Inject a new Value into Scope.
 -- Signature will always stay the same while the implementation changes :)
-inject :: Monad m => Value -> StateT Scope m ()
-inject v = modify $ insert "x" (newX v)
+inject :: Monad m => Value -> StateT [Scope] m ()
+inject v = modify $ \[s] -> [insert "x" (newX v) s]
 
 newX :: Value -> Function
 newX x = Function "x" (Exactly 0 []) (none x)
-
--- | Don't you be passin' any empty lists, now.
-popScope :: [Scope] -> [Scope]
-popScope = tail

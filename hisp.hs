@@ -20,7 +20,7 @@ main = do
   putStrLn "Welcome to the Hisp REPL. Type `h` for help."
   void $ runStateT run initialState
 
-run :: StateT Scope IO ()
+run :: StateT [Scope] IO ()
 run = forever $ do
   putStr' "> "
   input <- liftIO $ runMaybeT (getLine' >>= nest [])
@@ -28,27 +28,28 @@ run = forever $ do
     Nothing  -> putStrLn' ">>> Too many right parentheses."
     Just []  -> return ()
     Just "h" -> help
-    Just cs  -> get >>= \rs -> do
-                  output <- case rpn rs cs of
-                              Left err -> return err
-                              Right (v,rs') -> put rs' >> inject v >> return (show v)
-                  putStrLn' $ ">>> " ++ output
+    Just cs  -> get >>= \ss -> do
+      output <- case eval (parse cs >>= e) ss of
+                  (Left err, _)  -> return $ errMsg err
+                  (Right v, ss') -> put ss' >> inject v >> return (show v)
+      putStrLn' $ ">>> " ++ output
 
-help :: StateT Scope IO ()
-help = get >>= global >>= \bs -> liftIO $ do
+help :: StateT [Scope] IO ()
+help = global >>= \bs -> liftIO $ do
   let names = M.foldr (\f acc -> funcName f : acc) [] bs
   mapM_ putStrLn [ "Hisp REPL Help"
                  , "Available functions:"
                  , "  [ " ++ unwords names ++ " ]"
                  , "1. `x` stores what was calculated last."
-                 , "2. You can define your own symbols with `define`:"
+                 , "2. You can define your own functions with `define`:"
                  , "     (define foo 5)"
-                 , "     (define bar (* foo 2))" ]
+                 , "     (define bar (* foo 2))"
+                 , "     (define baz [a b] (+ a b))" ]
 
-rpn :: Scope -> String -> Either String (Value,Scope)
-rpn rs s = case parseExp rs s of
-          Left err -> Left $ "Syntax Error\n" ++ show err
-          Right (sexp,rs') -> (,rs') `fmap` e sexp
+parse :: String -> Evaluate Exp
+parse s = get >>= \rs -> case parseExp rs s of
+                           Left err -> failure $ "Syntax Error\n" ++ show err
+                           Right (ex,rs') -> put rs' >> return ex
 
 -- Only notes the locations of left parens.
 nest :: [Int] -> String -> MaybeT IO String

@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}  -- For those MonadState signatures...
 
 module Hisp.Types
     ( Value(..)
@@ -7,12 +8,16 @@ module Hisp.Types
     , Args(..)
     , Function(..)
     , Evaluate
+    , EvalError(..)
     , global
     , eval
-    , failure) where
+    , failure
+    , noArgs
+    , popScope ) where
 
 import Control.Monad.State.Lazy
 import Control.Monad.Error
+import Control.Applicative (Applicative)
 import Control.Arrow (first,second)
 import Data.List     (intersperse)
 import Data.Map      (Map)
@@ -22,16 +27,16 @@ import Hisp.Utils (tau)
 ---
 
 newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
-  deriving ( Monad, MonadError EvalError, MonadState [Scope], Functor)
+  deriving ( Monad, MonadError EvalError, MonadState [Scope], Functor, Applicative)
 
-data EvalError = M String deriving (Eq,Show)
+data EvalError = M { errMsg :: String } deriving (Eq,Show)
 
 instance Error EvalError where
     noMsg  = strMsg "No error message given."
     strMsg = M
 
-eval :: Evaluate a -> [Scope] -> Either EvalError a
-eval a s = evalState (runErrorT $ runE a) s
+eval :: Evaluate a -> [Scope] -> (Either EvalError a, [Scope])
+eval a s = runState (runErrorT $ runE a) s
 
 failure :: String -> Evaluate a
 failure = throwError . strMsg
@@ -40,11 +45,14 @@ failure = throwError . strMsg
 
 type Scope = Map String Function
 
-global :: Monad m => Scope -> m (Map String Function)
-global = return
+global :: MonadState [a] m => m a
+global = last `liftM` get
 
---local :: Monad m => Scope -> m (Map String Function)
---local = undefined
+-- | The Scope better not be empty!
+popScope :: MonadState [a] m => m ()
+popScope = modify tail
+
+---
 
 data Args = Exactly Int [String] | AtLeast Int deriving (Eq,Show)
 
