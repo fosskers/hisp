@@ -62,7 +62,7 @@ lambda = do
   string "lambda" >> spaces
   (ps,body) <- functionBody
   let ps'  = unwords ps
-      name = "lambda [" ++ ps' ++ "] @ " ++ show (hash ps')
+      name = "lambda [" ++ ps' ++ "] @ " ++ show (hash $ show body)
       func = Function name (Exactly (length ps) ps) (const $ e body)
   modifyState $ newLambda func
   return $ Call name []
