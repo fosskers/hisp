@@ -11,33 +11,33 @@ import Hisp.Types
 
 ---
 
-type REPLParser = Parsec String [Scope]
+type HispParser = Parsec String [Scope]
 
 parseExp :: [Scope] -> String -> Either ParseError (Exp,[Scope])
 parseExp rs = runParser ((,) <$> atom <*> getState) rs "(s-exp)"
 
-atom :: REPLParser Exp
+atom :: HispParser Exp
 atom = symbol <|> sexp <|> list
 
-sexp :: REPLParser Exp
-sexp = spaces *> char '(' *> spaces *> (define <|> funCall) <* char ')'
+sexp :: HispParser Exp
+sexp = spaces *> char '(' *> spaces *> (define <|> lambda <|> funCall) <* char ')'
 
-funCall :: REPLParser Exp
-funCall = FunCall <$> (function <* spaces) <*> args
+funCall :: HispParser Exp
+funCall = Call <$> (function <* spaces) <*> args
 
 -- | Any set of characters in function position will be parsed
 -- as a function call, but a special void function will be returned if
 -- the parsed function doesn't actually exist.
-function :: REPLParser String
+function :: HispParser String
 function = many1 $ noneOf "\n()[] "
 
-args :: REPLParser [Exp]
+args :: HispParser [Exp]
 args = many (atom <* spaces)
 
-symbol :: REPLParser Exp
-symbol = number <|> (flip FunCall [] <$> function)
+symbol :: HispParser Exp
+symbol = number <|> boolean <|> (flip Call [] <$> function)
 
-number :: REPLParser Exp
+number :: HispParser Exp
 number = do
   ds <- digits
   let val = if '.' `elem` ds
@@ -45,12 +45,18 @@ number = do
             else I (read ds :: Integer)
   return $ Val val
 
-digits :: REPLParser String
+digits :: HispParser String
 digits = (++) <$> whole <*> option "" dec
     where whole = many1 digit
           dec   = (:) <$> char '.' <*> whole
 
-define :: REPLParser Exp
+boolean :: HispParser Exp
+boolean = (Val $ B True) <$ string "True"
+          <|> (Val $ B False) <$ string "False"
+
+lambda = undefined
+
+define :: HispParser Exp
 define = do
   string "define" >> spaces
   name <- many1 (noneOf "()\n ") <* spaces
@@ -60,8 +66,8 @@ define = do
   modifyState $ (\[s] -> [insert name f s])
   return $ Val 1
 
-params :: REPLParser [String]
+params :: HispParser [String]
 params = char '[' *> spaces *> many (many1 (noneOf "\n[] ") <* spaces) <* char ']'
 
-list :: REPLParser Exp
+list :: HispParser Exp
 list = char '[' *> spaces *> ((Val . L) <$> args) <* char ']'

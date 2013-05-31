@@ -15,6 +15,7 @@ builtins = fromList $ map (\f -> (funcName f, f))
            , Function "-"    (AtLeast 2)    (foldE1 (-))
            , Function "/"    (AtLeast 2)    (foldE1 (/))
            , Function "^"    (AtLeast 2)    (foldE1 (^))
+--           , Function "="
            , Function "!"    (Exactly 1 []) (one (product . toN))
            , Function "mod"  (AtLeast 2)    (foldE1 mod)
            , Function "div"  (AtLeast 2)    (foldE1 div)

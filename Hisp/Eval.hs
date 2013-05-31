@@ -16,9 +16,9 @@ import Hisp.Types
 
 -- | The Evaluation Function
 e :: Exp -> Evaluate Value
-e (Val a)        = return a
-e (FunCall f es) = get >>= function f >>= \f' ->
-                   argCheck f' es >> local f' es >> apply f' es <* popScope
+e (Val a)     = return a
+e (Call f es) = get >>= function f >>= \f' ->
+                argCheck f' es >> local f' es >> apply f' es <* popScope
 
 argCheck :: Function -> [Exp] -> Evaluate a
 argCheck f es | numOkay (funcArgs f) (length es) = return undefined
@@ -36,9 +36,9 @@ local :: Function -> [Exp] -> Evaluate ()
 local (Function _ (AtLeast _) _) _     = modify (empty :)
 local (Function _ (Exactly _ ss) _) es = modify (ns :)
     where ns = fromList $ zipWith toF ss es
-          toF s (Val a)         = (s, Function s noArgs (none a))
-          toF s (FunCall f es') = (s, Function s (AtLeast 0)
-                                      (\es'' -> e $ FunCall f (es' ++ es'')))
+          toF s (Val a)      = (s, Function s noArgs (none a))
+          toF s (Call f es') = (s, Function s (AtLeast 0)
+                                   (\es'' -> e $ Call f (es' ++ es'')))
 
 numOkay :: Args -> Int -> Bool
 numOkay (Exactly i _) n = n == i
