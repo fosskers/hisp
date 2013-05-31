@@ -30,12 +30,15 @@ function f (s:ss) = case lookup f s of
                       Nothing -> function f ss
                       Just f' -> return f'
 
+-- Does the `(AtLeast 0)` there not matter?
 -- | Add a local scope based on a function's namespace.
 local :: Function -> [Exp] -> Evaluate ()
 local (Function _ (AtLeast _) _) _     = modify (empty :)
 local (Function _ (Exactly _ ss) _) es = modify (ns :)
     where ns = fromList $ zipWith toF ss es
-          toF s ex = (s, Function s (AtLeast 0) (const $ e ex))
+          toF s (Val a)         = (s, Function s (Exactly 0 []) (none a))
+          toF s (FunCall f es') = (s, Function s (AtLeast 0)
+                                      (\es'' -> e $ FunCall f (es' ++ es'')))
 
 numOkay :: Args -> Int -> Bool
 numOkay (Exactly i _) n = n == i
@@ -49,7 +52,7 @@ badArgs f es = "Wrong number of args given to: {{ " ++ funcName f ++ " }}" ++
 -- | For functions that take exactly one argument.
 one :: (Value -> a) -> [Exp] -> Evaluate a
 one f [n] = f `fmap` e n
-one _ _   = failure "You should never see this."
+one _ _   = failure "Single arg function applied to multiple arguments."
 
 -- | For functions that take no arguments.
 none :: Monad m => a -> b -> m a
