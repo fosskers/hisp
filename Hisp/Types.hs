@@ -34,7 +34,7 @@ failure = throwError . strMsg
 type Scope = Map String Function
 
 global :: MonadState [a] m => m a
-global = last `liftM` get
+global = head `liftM` get
 
 -- | The Scope better not be empty!
 popScope :: MonadState [a] m => m ()

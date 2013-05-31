@@ -5,7 +5,9 @@ import Control.Applicative           hiding (many)
 import Prelude                       hiding (lookup)
 import Text.Parsec.Prim (Parsec, modifyState)
 import Data.Map.Lazy    (insert)
+import Data.Hashable    (hash)
 
+import Hisp.Base (newLambda, newGlobal)
 import Hisp.Eval (e)
 import Hisp.Types
 
@@ -54,17 +56,28 @@ boolean :: HispParser Exp
 boolean = (Val $ B True) <$ string "True"
           <|> (Val $ B False) <$ string "False"
 
-lambda = undefined
+
+lambda :: HispParser Exp
+lambda = do
+  string "lambda" >> spaces
+  (ps,body) <- functionBody
+  let ps'  = unwords ps
+      name = "lambda [" ++ ps' ++ "] @ " ++ show (hash ps')
+      func = Function name (Exactly (length ps) ps) (const $ e body)
+  modifyState $ newLambda func
+  return $ Call name []
 
 define :: HispParser Exp
 define = do
   string "define" >> spaces
   name <- many1 (noneOf "()\n ") <* spaces
-  ps   <- option [] params <* spaces
-  body <- atom <* spaces
-  let f = Function name (Exactly (length ps) ps) (const $ e body)
-  modifyState $ (\[s] -> [insert name f s])
+  (ps,body) <- functionBody
+  let func = Function name (Exactly (length ps) ps) (const $ e body)
+  modifyState $ newGlobal func
   return $ Val 1
+
+functionBody :: HispParser ([String],Exp)
+functionBody = (,) <$> (option [] params <* spaces) <*> (atom <* spaces)
 
 params :: HispParser [String]
 params = char '[' *> spaces *> many (many1 (noneOf "\n[] ") <* spaces) <* char ']'

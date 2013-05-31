@@ -49,6 +49,7 @@ help = global >>= \bs -> liftIO $ do
                  , "     (define $ [f a] (f a))"
                  , "     ($ sin 1)"
                  , "     ($ (+ 1) 1)"
+                 , "     ($ (lambda [a] (+ 1 a)) 1)"
                  , "4. Feel free to write expressions over multiple lines." ]
 
 parse :: String -> Evaluate Exp
