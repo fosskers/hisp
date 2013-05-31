@@ -63,7 +63,7 @@ necArgs :: Args -> String
 necArgs (Exactly i _) = "exactly " ++ show i
 necArgs (AtLeast i)   = "at least " ++ show i
 
-data Exp = Val Value | FunCall String [Exp] deriving (Show)
+data Exp = Val Value | FunCall String [Exp] deriving (Show,Eq,Ord)
 
 -- Ord might need a specific declaration.
 -- Or else all I's might come before any D's regardless of number.
@@ -71,7 +71,8 @@ data Exp = Val Value | FunCall String [Exp] deriving (Show)
 -- where necessary. This allows it to be `Integral` and `Floating` at the same
 -- time.
 data Value = I Integer
-           | D Double deriving (Eq,Ord)
+           | D Double
+           | L [Exp] deriving (Eq,Ord)
 
 asI :: Value -> Value
 asI i@(I _) = i
@@ -84,6 +85,7 @@ asD (I i)   = D $ fromInteger i
 instance Show Value where
     show (I i) = show i
     show (D d) = show d
+    show (L l) = show l
 
 instance Enum Value where
     toEnum = I . toInteger

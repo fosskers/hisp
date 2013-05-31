@@ -17,7 +17,7 @@ parseExp :: [Scope] -> String -> Either ParseError (Exp,[Scope])
 parseExp rs = runParser ((,) <$> atom <*> getState) rs "(s-exp)"
 
 atom :: REPLParser Exp
-atom = symbol <|> sexp
+atom = symbol <|> sexp <|> list
 
 sexp :: REPLParser Exp
 sexp = spaces *> char '(' *> spaces *> (define <|> funCall) <* char ')'
@@ -29,7 +29,7 @@ funCall = FunCall <$> (function <* spaces) <*> args
 -- as a function call, but a special void function will be returned if
 -- the parsed function doesn't actually exist.
 function :: REPLParser String
-function = many1 $ noneOf "\n() "
+function = many1 $ noneOf "\n()[] "
 
 args :: REPLParser [Exp]
 args = many (atom <* spaces)
@@ -62,3 +62,6 @@ define = do
 
 params :: REPLParser [String]
 params = char '[' *> spaces *> many (many1 (noneOf "\n[] ") <* spaces) <* char ']'
+
+list :: REPLParser Exp
+list = char '[' *> spaces *> ((Val . L) <$> args) <* char ']'

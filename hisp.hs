@@ -45,7 +45,11 @@ help = global >>= \bs -> liftIO $ do
                  , "     (define foo 5)"
                  , "     (define bar (* foo 2))"
                  , "     (define baz [a b] (+ a b))"
-                 , "3. Feel free to write expressions over multiple lines." ]
+                 , "3. You can pass functions and also partially apply them:"
+                 , "     (define $ [f a] (f a))"
+                 , "     ($ sin 1)"
+                 , "     ($ (+ 1) 1)"
+                 , "4. Feel free to write expressions over multiple lines." ]
 
 parse :: String -> Evaluate Exp
 parse s = get >>= \rs -> case parseExp rs s of

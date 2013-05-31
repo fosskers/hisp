@@ -36,7 +36,7 @@ local :: Function -> [Exp] -> Evaluate ()
 local (Function _ (AtLeast _) _) _     = modify (empty :)
 local (Function _ (Exactly _ ss) _) es = modify (ns :)
     where ns = fromList $ zipWith toF ss es
-          toF s (Val a)         = (s, Function s (Exactly 0 []) (none a))
+          toF s (Val a)         = (s, Function s noArgs (none a))
           toF s (FunCall f es') = (s, Function s (AtLeast 0)
                                       (\es'' -> e $ FunCall f (es' ++ es'')))
 
