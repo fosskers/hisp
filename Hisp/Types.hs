@@ -75,6 +75,14 @@ data Value = I Integer
            | B Bool
            | L [Exp] deriving (Eq,Ord)
 
+isTrue :: Value -> Bool
+isTrue (B True) = True
+isTrue _        = False
+
+isFalse :: Value -> Bool
+isFalse (B False) = True
+isFalse _         = False
+
 asI :: Value -> Value
 asI i@(I _) = i
 asI (D d)   = I . toInteger . fromEnum $ d

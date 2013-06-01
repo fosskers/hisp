@@ -2,6 +2,7 @@ module Hisp.Eval
     ( e
     , one
     , two
+    , three
     , none
     , foldE
     , foldE1 ) where
@@ -59,6 +60,10 @@ one _ _   = failure "Single arg function applied to multiple arguments."
 two :: (Value -> Value -> a) -> [Exp] -> Evaluate a
 two f (x:y:_) = f <$> e x <*> e y
 two _ _       = failure "Two arg function applied to less than two arguments."
+
+three :: (Value -> Value -> Value -> a) -> [Exp] -> Evaluate a
+three f (x:y:z:_) = f <$> e x <*> e y <*> e z
+three _ _ = failure "Three arg function applied to less than three arguments."
 
 -- | For functions that take no arguments.
 none :: Monad m => a -> b -> m a

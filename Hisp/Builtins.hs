@@ -17,6 +17,7 @@ builtins = fromList $ map (\f -> (funcName f, f))
            , Function "^"    (AtLeast 2)    (foldE1 (^))
            , Function "="    (Exactly 2 []) (two equal)
            , Function "!"    (Exactly 1 []) (one (product . toN))
+           , Function "if"   (Exactly 3 []) (three ifBlock)
            , Function "mod"  (AtLeast 2)    (foldE1 mod)
            , Function "div"  (AtLeast 2)    (foldE1 div)
            , Function "abs"  (Exactly 1 []) (one abs)
@@ -32,3 +33,6 @@ builtins = fromList $ map (\f -> (funcName f, f))
 
 equal :: Value -> Value -> Value
 equal x y = B $ x == y
+
+ifBlock :: Value -> Value -> Value -> Value
+ifBlock p a b = if isTrue p then a else b
