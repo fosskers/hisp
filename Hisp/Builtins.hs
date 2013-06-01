@@ -4,7 +4,7 @@ import Data.Map (Map, fromList)
 
 import Hisp.Eval
 import Hisp.Types
-import Hisp.Utils (tau, toN)
+import Hisp.Utils (tau)
 
 ---
 
@@ -15,8 +15,12 @@ builtins = fromList $ map (\f -> (funcName f, f))
            , Function "-"    (AtLeast 2)    (foldE1 (-))
            , Function "/"    (AtLeast 2)    (foldE1 (/))
            , Function "^"    (AtLeast 2)    (foldE1 (^))
-           , Function "="    (Exactly 2 []) (two equal)
-           , Function "!"    (Exactly 1 []) (one (product . toN))
+           , Function "<"    (Exactly 2 []) (two ((B .) . (<)))
+           , Function ">"    (Exactly 2 []) (two ((B .) . (>)))
+           , Function ">="   (Exactly 2 []) (two ((B .) . (>=)))
+           , Function "<="   (Exactly 2 []) (two ((B .) . (<=)))
+           , Function "="    (Exactly 2 []) (two ((B .) . (==)))
+           , Function "!"    (Exactly 1 []) (one (product . enumFromTo 1))
            , Function "if"   (Exactly 3 []) (three ifBlock)
            , Function "mod"  (AtLeast 2)    (foldE1 mod)
            , Function "div"  (AtLeast 2)    (foldE1 div)
@@ -30,9 +34,6 @@ builtins = fromList $ map (\f -> (funcName f, f))
            , Function "tau"  noArgs (none tau)
            , Function "pi"   noArgs (none pi)
            , Function "x"    noArgs (none 0) ]
-
-equal :: Value -> Value -> Value
-equal x y = B $ x == y
 
 ifBlock :: Value -> Value -> Value -> Value
 ifBlock p a b = if isTrue p then a else b
