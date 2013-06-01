@@ -4,7 +4,6 @@ import Text.ParserCombinators.Parsec hiding ((<|>))
 import Control.Applicative           hiding (many)
 import Prelude                       hiding (lookup)
 import Text.Parsec.Prim (Parsec, modifyState)
-import Data.Map.Lazy    (insert)
 import Data.Hashable    (hash)
 
 import Hisp.Base (newLambda, newGlobal)

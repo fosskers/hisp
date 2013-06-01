@@ -1,6 +1,7 @@
 module Hisp.Eval
     ( e
     , one
+    , two
     , none
     , foldE
     , foldE1 ) where
@@ -8,7 +9,7 @@ module Hisp.Eval
 import Prelude hiding (lookup)
 import Control.Monad.State.Lazy
 import Data.Map.Lazy (lookup, fromList, empty)
-import Control.Applicative ((<*))
+import Control.Applicative ((<*),(<$>),(<*>))
 
 import Hisp.Types
 
@@ -53,6 +54,11 @@ badArgs f es = "Wrong number of args given to: {{ " ++ funcName f ++ " }}" ++
 one :: (Value -> a) -> [Exp] -> Evaluate a
 one f [n] = f `fmap` e n
 one _ _   = failure "Single arg function applied to multiple arguments."
+
+-- | For functions that take exactly two arguments.
+two :: (Value -> Value -> a) -> [Exp] -> Evaluate a
+two f (x:y:_) = f <$> e x <*> e y
+two _ _       = failure "Two arg function applied to less than two arguments."
 
 -- | For functions that take no arguments.
 none :: Monad m => a -> b -> m a
