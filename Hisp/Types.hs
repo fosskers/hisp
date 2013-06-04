@@ -14,8 +14,12 @@ import Hisp.Utils (tau)
 
 ---
 
-newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
-  deriving ( Monad, MonadError EvalError, MonadState [Scope], Functor, Applicative)
+--newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
+--  deriving ( Monad, MonadError EvalError, MonadState [Scope], Functor, Applicative)
+
+newtype Evaluate a = E { runE :: ErrorT EvalError (StateT [Scope] IO) a }
+  deriving ( Monad, MonadError EvalError, MonadState [Scope], MonadIO
+           , Functor, Applicative)
 
 data EvalError = M { errMsg :: String } deriving (Eq,Show)
 
@@ -23,8 +27,8 @@ instance Error EvalError where
     noMsg  = strMsg "No error message given."
     strMsg = M
 
-eval :: Evaluate a -> [Scope] -> (Either EvalError a, [Scope])
-eval a s = runState (runErrorT $ runE a) s
+eval :: Evaluate a -> [Scope] -> IO (Either EvalError a, [Scope])
+eval a s = runStateT (runErrorT $ runE a) s
 
 failure :: String -> Evaluate a
 failure = throwError . strMsg
@@ -49,8 +53,9 @@ data Function = Function { funcName :: String
                          , apply    :: [Exp] -> Evaluate Value }
 
 instance Show Function where
-    show f = "(lambda [" ++ as ++ "] (" ++ funcName f ++ " " ++ as ++ "))"
-        where as = argString $ funcArgs f
+    show f = "(lambda [" ++ as ++ "] (" ++ funcName f ++ as' ++ "))"
+        where as  = argString $ funcArgs f
+              as' = if null as then "" else " " ++ as
 
 argString :: Args -> String
 argString (Exactly i _) = intersperse ' ' (take i ['a'..'z'])

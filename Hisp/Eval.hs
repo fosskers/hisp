@@ -18,9 +18,16 @@ import Hisp.Types
 
 -- | The Evaluation Function
 e :: Exp -> Evaluate Value
+--e (Val a)     = liftIO (putStrLn $ "Reached primative: " ++ show a) >> return a
 e (Val a)     = return a
 e (Call f es) = get >>= function f >>= \f' ->
                 argCheck f' es >> local f' es >> apply f' es <* popScope
+--e (Call f es) = liftIO (putStrLn $ "Calling " ++ f) >> get >>= function f >>= \f' ->
+--                argCheck f' es >> local f' es >> stack >> apply f' es <* popScope
+
+stack :: Evaluate ()
+stack = get >>= \s -> liftIO (putStrLn $ "Stack has " ++ show (length s) ++
+                                                     " layers.")
 
 argCheck :: Function -> [Exp] -> Evaluate a
 argCheck f es | numOkay (funcArgs f) (length es) = return undefined

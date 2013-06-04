@@ -4,7 +4,7 @@ import Data.Map (Map, fromList)
 
 import Hisp.Eval
 import Hisp.Types
-import Hisp.Utils (tau)
+import Hisp.Utils (tau,twinZip)
 
 ---
 
@@ -21,7 +21,7 @@ builtins = fromList $ map (\f -> (funcName f, f))
            , Function "<="   (Exactly 2 []) (two ((B .) . (<=)))
            , Function "="    (Exactly 2 []) (two ((B .) . (==)))
            , Function "!"    (Exactly 1 []) (one (product . enumFromTo 1))
-           , Function "if"   (Exactly 3 []) (three ifBlock)
+           , Function "if"   (Exactly 3 []) ifBlock
            , Function "mod"  (AtLeast 2)    (foldE1 mod)
            , Function "div"  (AtLeast 2)    (foldE1 div)
            , Function "abs"  (Exactly 1 []) (one abs)
@@ -31,9 +31,16 @@ builtins = fromList $ map (\f -> (funcName f, f))
            , Function "log"  (Exactly 1 []) (one log)
            , Function "exp"  (Exactly 1 []) (one exp)
            , Function "sqrt" (Exactly 1 []) (one sqrt)
+           , Function "cond" (AtLeast 2)    (condBlock . twinZip)
+           , Function "else" noArgs (none $ B True)
            , Function "tau"  noArgs (none tau)
            , Function "pi"   noArgs (none pi)
            , Function "x"    noArgs (none 0) ]
 
-ifBlock :: Value -> Value -> Value -> Value
-ifBlock p a b = if isTrue p then a else b
+ifBlock :: [Exp] -> Evaluate Value
+ifBlock (p:a:b:_) = e p >>= \p' -> if isTrue p' then e a else e b
+ifBlock _ = failure "Too many arguments to `if` block."
+
+condBlock :: [(Exp,Exp)] -> Evaluate Value
+condBlock ((p,a):es) = e p >>= \p' -> if isTrue p' then e a else condBlock es
+condBlock [] = failure "Non-terminating `cond` block given."

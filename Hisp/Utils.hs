@@ -20,3 +20,8 @@ tau = 6.283185307179586
 fork :: Int -> [a] -> ([a],a,[a])
 fork n xs = (b, head a, tail a)
     where (b,a) = splitAt n xs
+
+twinZip :: [a] -> [(a,a)]
+twinZip []       = []
+twinZip [x]      = []
+twinZip (x:y:zs) = (x,y) : twinZip zs
