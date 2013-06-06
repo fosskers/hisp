@@ -3,12 +3,16 @@
 
 module Hisp.Types where
 
-import Control.Monad.State.Lazy
-import Control.Monad.Error
+--import Prelude hiding (lookup)
+
+import qualified Data.Map as M
+
 import Control.Applicative (Applicative)
 import Control.Arrow (first,second)
 import Data.List     (intersperse)
-import Data.Map      (Map)
+import Control.Monad.State.Lazy
+import Control.Monad.Error
+import Data.Hashable
 
 import Hisp.Utils (tau)
 
@@ -17,8 +21,8 @@ import Hisp.Utils (tau)
 --newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
 --  deriving ( Monad, MonadError EvalError, MonadState [Scope], Functor, Applicative)
 
-newtype Evaluate a = E { runE :: ErrorT EvalError (StateT [Scope] IO) a }
-  deriving ( Monad, MonadError EvalError, MonadState [Scope], MonadIO
+newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
+  deriving ( Monad, MonadError EvalError, MonadState [Scope]
            , Functor, Applicative)
 
 data EvalError = M { errMsg :: String } deriving (Eq,Show)
@@ -27,15 +31,22 @@ instance Error EvalError where
     noMsg  = strMsg "No error message given."
     strMsg = M
 
-eval :: Evaluate a -> [Scope] -> IO (Either EvalError a, [Scope])
-eval a s = runStateT (runErrorT $ runE a) s
+eval :: Evaluate a -> [Scope] -> (Either EvalError a, [Scope])
+eval a s = runState (runErrorT $ runE a) s
 
 failure :: String -> Evaluate a
 failure = throwError . strMsg
 
----
+--------
+-- SCOPE
+--------
+type Hash      = Int
+type Address   = (String,Hash)
+type Scope     = M.Map Address Function
+type ScopeFold = ([Function] -> Address -> Function -> [Function])
 
-type Scope = Map String Function
+noHash :: Hash
+noHash = 0
 
 global :: MonadState [a] m => m a
 global = head `liftM` get
@@ -44,11 +55,31 @@ global = head `liftM` get
 popScope :: MonadState [a] m => m ()
 popScope = modify tail
 
+searchByName :: String -> Scope -> Maybe Function
+searchByName n s = searchScope sf s
+    where sf acc (n',_) f = if n == n' then f : acc else acc
+
+searchByHash :: Hash -> Scope -> Maybe Function
+searchByHash h s = searchScope sf s
+    where sf acc (_,h') f = if h == h' then f : acc else acc
+
+searchScope :: ScopeFold -> Scope -> Maybe Function
+searchScope sf s = case M.foldlWithKey sf [] s of
+                     []    -> Nothing
+                     (f:_) -> Just f
+
+hashFromName :: String -> Scope -> Maybe Int
+hashFromName n s = case searchByName n s of
+                     Nothing -> Nothing
+                     Just f  -> Just $ funcHash f
+
 ---
 
-data Args = Exactly Int [String] | AtLeast Int deriving (Eq,Show)
+data Args = Exactly Int [(String,Int)] | AtLeast Int deriving (Eq,Show)
 
 data Function = Function { funcName :: String
+                         , funcHash :: Hash
+                         , funcBody :: Maybe Exp
                          , funcArgs :: Args
                          , apply    :: [Exp] -> Evaluate Value }
 
@@ -68,7 +99,7 @@ necArgs :: Args -> String
 necArgs (Exactly i _) = "exactly " ++ show i
 necArgs (AtLeast i)   = "at least " ++ show i
 
-data Exp = Val Value | Call String [Exp] deriving (Show,Eq,Ord)
+data Exp = Val Value | Call String Hash [Exp] deriving (Show,Eq,Ord)
 
 -- Ord might need a specific declaration.
 -- Or else all I's might come before any D's regardless of number.
@@ -77,8 +108,8 @@ data Exp = Val Value | Call String [Exp] deriving (Show,Eq,Ord)
 -- time.
 data Value = I Integer
            | D Double
-           | B Bool
-           | L [Exp] deriving (Eq,Ord)
+           | B Bool deriving (Eq,Ord)
+--           | L [Exp] deriving (Eq,Ord)
 
 isTrue :: Value -> Bool
 isTrue (B True) = True
@@ -100,7 +131,12 @@ instance Show Value where
     show (I i) = show i
     show (D d) = show d
     show (B b) = show b
-    show (L l) = show l
+--    show (L l) = show l
+
+instance Hashable Value where
+    hashWithSalt s (I i) = hashWithSalt s i
+    hashWithSalt s (D d) = hashWithSalt s d
+    hashWithSalt s (B b) = hashWithSalt s b
 
 instance Enum Value where
     toEnum = I . toInteger

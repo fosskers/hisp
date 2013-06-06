@@ -29,8 +29,7 @@ run = forever $ do
     Just []  -> return ()
     Just "h" -> help
     Just cs  -> get >>= \ss -> do
-      result <- liftIO $ eval (parse cs >>= e) ss
-      output <- case result of
+      output <- case eval (parse cs >>= e) ss of
                   (Left err, _)  -> return $ errMsg err
                   (Right v, ss') -> put ss' >> inject v >> return (show v)
       putStrLn' $ ">>> " ++ output

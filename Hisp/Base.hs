@@ -22,11 +22,11 @@ inject :: Monad m => Value -> StateT [Scope] m ()
 inject v = get >>= \ss -> put (newGlobal (newX v) ss)
 
 newX :: Value -> Function
-newX x = Function "x" (Exactly 0 []) (none x)
+newX x = Function "x" 25 Nothing (Exactly 0 []) (none x)
 
 newGlobal :: Function -> [Scope] -> [Scope]
-newGlobal f@(Function n _ _) ss = b ++ [insert n f g] ++ l
+newGlobal f@(Function n h _ _ _) ss = b ++ [insert (n,h) f g] ++ l
     where (b,g,l) = fork (length ss - 2) ss
 
 newLambda :: Function -> [Scope] -> [Scope]
-newLambda f@(Function n _ _) ss = init ss ++ [insert n f $ last ss]
+newLambda f@(Function n h _ _ _) ss = init ss ++ [insert (n,h) f $ last ss]
