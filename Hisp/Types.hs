@@ -101,14 +101,12 @@ necArgs (AtLeast i)   = "at least " ++ show i
 
 data Exp = Val Value | Call String Hash [Exp] deriving (Show,Eq,Ord)
 
--- Ord might need a specific declaration.
--- Or else all I's might come before any D's regardless of number.
 -- | A Numeric type of pure evil. Converts between Integers and Doubles
 -- where necessary. This allows it to be `Integral` and `Floating` at the same
 -- time.
 data Value = I Integer
            | D Double
-           | B Bool deriving (Eq,Ord)
+           | B Bool deriving (Eq)
 --           | L [Exp] deriving (Eq,Ord)
 
 isTrue :: Value -> Bool
@@ -132,6 +130,12 @@ instance Show Value where
     show (D d) = show d
     show (B b) = show b
 --    show (L l) = show l
+
+instance Ord Value where
+    compare (I i) (I j) = compare i j
+    compare (I i) (D d) = compare (fromIntegral i) d
+    compare (D d) (I i) = compare d (fromIntegral i)
+    compare (B b) (B c) = compare b c
 
 instance Hashable Value where
     hashWithSalt s (I i) = hashWithSalt s i

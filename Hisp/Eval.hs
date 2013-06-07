@@ -62,7 +62,7 @@ local (Function _ _ _ (Exactly _ ah) _) es = modify (ns :)
               where h = hash v
           toF (a,_) (Call f h' es') = ((a,h), Function a h Nothing (AtLeast 0)
                                        (\es'' -> e $ Call f h' (es' ++ es'')))
-              where h = hash $ show es'
+              where h = hash $ show es'  -- Must be very unique.
 
 -- | Needs to be called after `local`.
 -- No body means it's a builtin function.

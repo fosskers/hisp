@@ -22,7 +22,7 @@ inject :: Monad m => Value -> StateT [Scope] m ()
 inject v = get >>= \ss -> put (newGlobal (newX v) ss)
 
 newX :: Value -> Function
-newX x = Function "x" 25 Nothing (Exactly 0 []) (none x)
+newX x = Function "x" 26 Nothing (Exactly 0 []) (none x)
 
 newGlobal :: Function -> [Scope] -> [Scope]
 newGlobal f@(Function n h _ _ _) ss = b ++ [insert (n,h) f g] ++ l
