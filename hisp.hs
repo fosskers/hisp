@@ -1,6 +1,34 @@
 {-# LANGUAGE TupleSections #-}
 
--- Simple s-expression repl.
+{- HISP
+
+Hisp is a:
+
+* pure
+* lazy
+* functional
+* reduced Lisp dialect
+
+It has:
+
+* recursion
+* lambdas
+* partial application
+
+It doesn't have:
+
+* loops
+* (real) IO
+* quoting
+
+It wants:
+
+* sharing <- need this badly
+* aliasing
+* lists
+* `let`
+
+-}
 
 import Hisp.Eval
 import Hisp.Base
@@ -8,6 +36,7 @@ import Hisp.Utils
 import Hisp.Types
 import Hisp.Parser
 
+import System.Environment (getArgs)
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Maybe
 
@@ -17,8 +46,24 @@ import qualified Data.Map as M
 
 main :: IO ()
 main = do
+  files <- getArgs
+  scope <- load initialState files
   putStrLn "Welcome to the Hisp REPL. Type `h` for help."
-  void $ runStateT run initialState
+  void $ runStateT run scope
+
+-- | For now this will just load, and not execute any function calls.
+load :: [Scope] -> [FilePath] -> IO [Scope]
+load ss [] = return ss
+load ss fs = do
+  contents <- concat `fmap` mapM load' fs
+  case parseExp ss contents of
+    Left err      -> putStrLn ("Parsing Error:\n" ++ show err) >> return ss
+    Right (_,ss') -> do
+      let news = M.size (head ss') - M.size (head ss)
+          suff = if news == 1 then "" else "s"
+      putStrLn ("Done. Loaded " ++ show news ++ " function" ++ suff ++ ".")
+      return ss'
+    where load' f = putStrLn ("Loading " ++ f ++ "...") >> readFile f
 
 run :: StateT [Scope] IO ()
 run = forever $ do
@@ -53,9 +98,9 @@ help = global >>= \bs -> liftIO $ do
                  , "4. Feel free to write expressions over multiple lines." ]
 
 parse :: String -> Evaluate Exp
-parse s = get >>= \rs -> case parseExp rs s of
+parse s = get >>= \ss -> case parseExp ss s of
                            Left err -> failure $ "Syntax Error\n" ++ show err
-                           Right (ex,rs') -> put rs' >> return ex
+                           Right (ex,ss') -> put ss' >> return (head ex)
 
 -- Only notes the locations of left parens.
 nest :: [Int] -> String -> MaybeT IO String

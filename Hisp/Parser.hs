@@ -17,8 +17,8 @@ import Hisp.Types
 
 type HispParser = Parsec String [Scope]
 
-parseExp :: [Scope] -> String -> Either ParseError (Exp,[Scope])
-parseExp rs = runParser ((,) <$> atom <*> getState) rs "(s-exp)"
+parseExp :: [Scope] -> String -> Either ParseError ([Exp],[Scope])
+parseExp rs = runParser ((,) <$> many1 (atom <* spaces) <*> getState) rs "(s-exp)"
 
 atom :: HispParser Exp
 atom = symbol <|> sexp  -- <|> list
