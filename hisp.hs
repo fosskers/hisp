@@ -34,7 +34,9 @@ import Hisp.Eval
 import Hisp.Base
 import Hisp.Utils
 import Hisp.Types
+import Hisp.Scope
 import Hisp.Parser
+import Hisp.Builtins
 
 import System.Environment (getArgs)
 import Control.Monad.State.Lazy
@@ -50,6 +52,10 @@ main = do
   scope <- load initialState files
   putStrLn "Welcome to the Hisp REPL. Type `h` for help."
   void $ runStateT run scope
+
+-- | The bottom Scope is for lambdas. The next is for global functions.
+initialState :: [Scope]
+initialState = [builtins,M.empty]
 
 -- | For now this will just load, and not execute any function calls.
 load :: [Scope] -> [FilePath] -> IO [Scope]

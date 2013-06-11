@@ -15,15 +15,20 @@ import Data.Map.Lazy       (fromList, empty)
 import Control.Applicative ((<*),(<$>),(<*>))
 import Data.Hashable       (hash)
 
+--import Hisp.Base
 import Hisp.Types
+import Hisp.Scope
 
 ---
 
 -- | The Evaluation Function
 e :: Exp -> Evaluate Value
 e (Val a)       = return a
-e (Call f h es) = get >>= function f h >>= \f' -> argCheck f' es >> local f' es >>
-                  bindParamCalls f' >>= \f'' -> apply f'' es <* popScope
+e (Symbol n h)  = return $ S n
+e (List ((Symbol n h):es)) =
+    get >>= function n h >>= \f -> argCheck f es >>
+    local f es >> bindParamCalls f >>= \f' -> apply f' es <* popScope
+e (List _) = failure "Eval.e: Need a returnable Value type for Lists!"
 
 argCheck :: Function -> [Exp] -> Evaluate a
 argCheck f es | numOkay (funcArgs f) (length es) = return undefined
@@ -58,10 +63,11 @@ local :: Function -> [Exp] -> Evaluate ()
 local (Function _ _ _ (AtLeast _) _) _     = modify (empty :)
 local (Function _ _ _ (Exactly _ ah) _) es = modify (ns :)
     where ns = fromList $ zipWith toF ah es
-          toF (a,_) (Val v) = ((a,h), Function a h Nothing noArgs (none v))
+          toF (Symbol a _) (Val v) = ((a,h), Function a h Nothing noArgs (none v))
               where h = hash v
-          toF (a,_) (Call f h' es') = ((a,h), Function a h Nothing (AtLeast 0)
-                                       (\es'' -> e $ Call f h' (es' ++ es'')))
+--          toF (Symbol a _) (Symbol n h') = ((a,h'), Function a h' Nothing noArgs (none v))
+          toF (Symbol a _) (List es') = ((a,h), Function a h Nothing (AtLeast 0)
+                                       (\es'' -> e $ List (es' ++ es'')))
               where h = hash $ show es'  -- Must be very unique.
 
 -- | Needs to be called after `local`.
@@ -74,11 +80,12 @@ bindParamCalls (Function n h (Just b) as _) = head `fmap` get >>= \ls -> do
   let b' = connect ls b
   return $ Function n h (Just b') as (const $ e b')
 
+-- BUG: This doesn't seem to be working.
 connect :: Scope -> Exp -> Exp
 connect _ v@(Val _) = v
-connect s (Call f h es) = Call f h' es'
-    where h'  = case hashFromName f s of Nothing -> h; Just h'' -> h''
-          es' = map (connect s) es
+connect s (List es) = List $ map (connect s) es
+connect s (Symbol n h) = Symbol n h'
+    where h' = case hashFromName n s of Nothing -> h; Just h'' -> h''
 
 numOkay :: Args -> Int -> Bool
 numOkay (Exactly i _) n = n == i

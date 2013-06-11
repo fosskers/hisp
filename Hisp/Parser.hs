@@ -9,7 +9,8 @@ import Text.Parsec.Prim (Parsec, modifyState)
 import Data.Hashable    (hash)
 import Control.Arrow    (first)
 
-import Hisp.Base (newLambda, newGlobal)
+import Hisp.Scope
+import Hisp.Base (symbolString)
 import Hisp.Eval (e)
 import Hisp.Types
 
@@ -18,31 +19,16 @@ import Hisp.Types
 type HispParser = Parsec String [Scope]
 
 parseExp :: [Scope] -> String -> Either ParseError ([Exp],[Scope])
-parseExp rs = runParser ((,) <$> many1 (atom <* spaces) <*> getState) rs "(s-exp)"
+parseExp ss = runParser ((,) <$> hisp <*> getState) ss "(s-exp)"
+
+hisp :: HispParser [Exp]
+hisp = many1 atom <* spaces
 
 atom :: HispParser Exp
-atom = symbol <|> sexp  -- <|> list
+atom = spaces *> (datum <|> sexp)
 
-sexp :: HispParser Exp
-sexp = spaces *> char '(' *> spaces *> (define <|> lambda <|> call) <* char ')'
-
-call :: HispParser Exp
-call = flip Call noHash <$> (function <* spaces) <*> args
-
--- | Any set of characters in function position will be parsed
--- as a function call, but a special void function will be returned if
--- the parsed function doesn't actually exist.
-function :: HispParser String
-function = many1 $ noneOf "\n()[] "
-
-args :: HispParser [Exp]
-args = many (atom <* spaces)
-
--- The `noHash` here shouldn't be a problem. Global symbols will be called by
--- name, and symbols within function definitions will have their hashes
--- altered to match those of the function parameters.
-symbol :: HispParser Exp
-symbol = number <|> boolean <|> (function >>= \f -> return (Call f noHash []))
+datum :: HispParser Exp
+datum = number <|> boolean <|> symbol
 
 number :: HispParser Exp
 number = do
@@ -61,7 +47,34 @@ boolean :: HispParser Exp
 boolean = (Val $ B True)  <$ string "True"
       <|> (Val $ B False) <$ string "False"
 
+symbol :: HispParser Exp
+symbol = flip Symbol noHash <$> (many1 $ noneOf "\n()[] ")
 
+sexp :: HispParser Exp
+sexp = char '(' *> spaces *> (define <|> list) <* char ')'
+
+list :: HispParser Exp
+list = List <$> many atom
+
+----------------
+-- SPECIAL FORMS
+----------------
+define :: HispParser Exp
+define = do
+  string "define" >> spaces
+  name <- many1 (noneOf "[]()\n ") <* spaces
+  (ps,body) <- functionBody
+  let ps' = expList ps
+  hash' <- (hash . (name :)) `fmap` mapM symbolString ps'
+  let func = Function name hash' (Just body)
+             (Exactly (length ps') ps') (const $ e body)
+  modifyState $ newGlobal func
+  return $ Symbol name hash'
+
+functionBody :: HispParser (Exp,Exp)
+functionBody = (,) <$> (option (List []) sexp <* spaces) <*> (atom <* spaces)
+
+{-}
 lambda :: HispParser Exp
 lambda = do
   string "lambda" >> spaces
@@ -71,22 +84,4 @@ lambda = do
       func  = Function name hash' (Just body) (Exactly (length ps) ps) (const $ e body)
   modifyState $ newLambda func
   return $ Call "lambda" hash' []
-
-define :: HispParser Exp
-define = do
-  string "define" >> spaces
-  name <- many1 (noneOf "()\n ") <* spaces
-  (ps,body) <- first (map (,noHash)) `fmap` functionBody
-  let hash' = hash $ name : map fst ps  -- Might be unique enough.
-      func  = Function name hash' (Just body) (Exactly (length ps) ps) (const $ e body)
-  modifyState $ newGlobal func
-  return . Val . I . fromIntegral $ hash'
-
-functionBody :: HispParser ([String],Exp)
-functionBody = (,) <$> (option [] params <* spaces) <*> (atom <* spaces)
-
-params :: HispParser [String]
-params = char '[' *> spaces *> many (many1 (noneOf "\n[] ") <* spaces) <* char ']'
-
---list :: HispParser Exp
---list = char '[' *> spaces *> ((Val . L) <$> args) <* char ']'
+-}

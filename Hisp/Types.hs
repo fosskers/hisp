@@ -48,34 +48,9 @@ type ScopeFold = ([Function] -> Address -> Function -> [Function])
 noHash :: Hash
 noHash = 0
 
-global :: MonadState [a] m => m a
-global = head `liftM` get
-
--- | The Scope better not be empty!
-popScope :: MonadState [a] m => m ()
-popScope = modify tail
-
-searchByName :: String -> Scope -> Maybe Function
-searchByName n s = searchScope sf s
-    where sf acc (n',_) f = if n == n' then f : acc else acc
-
-searchByHash :: Hash -> Scope -> Maybe Function
-searchByHash h s = searchScope sf s
-    where sf acc (_,h') f = if h == h' then f : acc else acc
-
-searchScope :: ScopeFold -> Scope -> Maybe Function
-searchScope sf s = case M.foldlWithKey sf [] s of
-                     []    -> Nothing
-                     (f:_) -> Just f
-
-hashFromName :: String -> Scope -> Maybe Int
-hashFromName n s = case searchByName n s of
-                     Nothing -> Nothing
-                     Just f  -> Just $ funcHash f
-
 ---
 
-data Args = Exactly Int [(String,Int)] | AtLeast Int deriving (Eq,Show)
+data Args = Exactly Int [Exp] | AtLeast Int deriving (Eq,Show)
 
 data Function = Function { funcName :: String
                          , funcHash :: Hash
@@ -99,15 +74,28 @@ necArgs :: Args -> String
 necArgs (Exactly i _) = "exactly " ++ show i
 necArgs (AtLeast i)   = "at least " ++ show i
 
-data Exp = Val Value | Call String Hash [Exp] deriving (Show,Eq,Ord)
+----------------
+-- S-EXPRESSIONS
+----------------
+data Exp = Val Value
+         | Symbol String Hash
+         | List { expList :: [Exp] }
+           deriving (Show,Eq,Ord)
 
+isSymbol :: Exp -> Bool
+isSymbol (Symbol _ _) = True
+isSymbol _            = False
+
+------------------
+-- HISP DATA TYPES
+------------------
 -- | A Numeric type of pure evil. Converts between Integers and Doubles
 -- where necessary. This allows it to be `Integral` and `Floating` at the same
 -- time.
 data Value = I Integer
            | D Double
-           | B Bool deriving (Eq)
---           | L [Exp] deriving (Eq,Ord)
+           | B Bool
+           | S String deriving (Eq)
 
 isTrue :: Value -> Bool
 isTrue (B True) = True
@@ -129,18 +117,20 @@ instance Show Value where
     show (I i) = show i
     show (D d) = show d
     show (B b) = show b
---    show (L l) = show l
+    show (S s) = s
 
 instance Ord Value where
     compare (I i) (I j) = compare i j
     compare (I i) (D d) = compare (fromIntegral i) d
     compare (D d) (I i) = compare d (fromIntegral i)
     compare (B b) (B c) = compare b c
+    compare (S s) (S t) = compare s t
 
 instance Hashable Value where
     hashWithSalt s (I i) = hashWithSalt s i
     hashWithSalt s (D d) = hashWithSalt s d
     hashWithSalt s (B b) = hashWithSalt s b
+    hashWithSalt s (S t) = hashWithSalt s t
 
 instance Enum Value where
     toEnum = I . toInteger
