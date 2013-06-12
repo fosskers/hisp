@@ -7,7 +7,6 @@ import Control.Applicative           hiding (many)
 import Prelude                       hiding (lookup)
 import Text.Parsec.Prim (Parsec, modifyState)
 import Data.Hashable    (hash)
-import Control.Arrow    (first)
 
 import Hisp.Scope
 import Hisp.Base (symbolString)
@@ -22,10 +21,10 @@ parseExp :: [Scope] -> String -> Either ParseError ([Exp],[Scope])
 parseExp ss = runParser ((,) <$> hisp <*> getState) ss "(s-exp)"
 
 hisp :: HispParser [Exp]
-hisp = many1 atom <* spaces
+hisp = spaces *> many1 atom
 
 atom :: HispParser Exp
-atom = spaces *> (datum <|> sexp)
+atom = (datum <|> sexp) <* spaces
 
 datum :: HispParser Exp
 datum = number <|> boolean <|> symbol
@@ -62,7 +61,7 @@ list = List <$> many atom
 define :: HispParser Exp
 define = do
   string "define" >> spaces
-  name <- many1 (noneOf "[]()\n ") <* spaces
+  name <- (symbol <* spaces) >>= symbolString
   (ps,body) <- functionBody
   let ps' = expList ps
   hash' <- (hash . (name :)) `fmap` mapM symbolString ps'
@@ -72,7 +71,7 @@ define = do
   return $ Symbol name hash'
 
 functionBody :: HispParser (Exp,Exp)
-functionBody = (,) <$> (option (List []) sexp <* spaces) <*> (atom <* spaces)
+functionBody = (,) <$> (option (List []) sexp <* spaces) <*> atom
 
 {-}
 lambda :: HispParser Exp
