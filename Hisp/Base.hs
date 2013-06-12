@@ -12,10 +12,10 @@ import Hisp.Eval (none)
 
 -- | Inject a new Value into Scope.
 -- Signature will always stay the same while the implementation changes :)
-inject :: Monad m => Value -> StateT [Scope] m ()
+inject :: Monad m => Exp -> StateT [Scope] m ()
 inject v = get >>= \ss -> put (newGlobal (newX v) ss)
 
-newX :: Value -> Function
+newX :: Exp -> Function
 newX x = Function "x" 26 Nothing (Exactly 0 []) (none x)
 
 symbolString :: Monad m => Exp -> m String

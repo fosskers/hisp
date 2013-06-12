@@ -33,8 +33,8 @@ number :: HispParser Exp
 number = do
   ds <- digits
   let val = if '.' `elem` ds
-            then D (read ds :: Double)
-            else I (read ds :: Integer)
+            then N $ D (read ds :: Double)
+            else N $ I (read ds :: Integer)
   return $ Val val
 
 digits :: HispParser String

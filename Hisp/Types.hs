@@ -56,7 +56,7 @@ data Function = Function { funcName :: String
                          , funcHash :: Hash
                          , funcBody :: Maybe Exp
                          , funcArgs :: Args
-                         , apply    :: [Exp] -> Evaluate Value }
+                         , apply    :: [Exp] -> Evaluate Exp }
 
 instance Show Function where
     show f = "(lambda [" ++ as ++ "] (" ++ funcName f ++ as' ++ "))"
@@ -80,7 +80,12 @@ necArgs (AtLeast i)   = "at least " ++ show i
 data Exp = Val Value
          | Symbol String Hash
          | List { expList :: [Exp] }
-           deriving (Show,Eq,Ord)
+           deriving (Eq,Ord)
+
+instance Show Exp where
+    show (Val v) = show v
+    show (Symbol n h) = n ++ " @ " ++ show h
+    show (List es) = "(" ++ unwords (map show es) ++ ")"
 
 isSymbol :: Exp -> Bool
 isSymbol (Symbol _ _) = True
@@ -89,71 +94,97 @@ isSymbol _            = False
 ------------------
 -- HISP DATA TYPES
 ------------------
--- | A Numeric type of pure evil. Converts between Integers and Doubles
--- where necessary. This allows it to be `Integral` and `Floating` at the same
--- time.
-data Value = I Integer
-           | D Double
+data Value = N Number
            | B Bool
-           | S String deriving (Eq)
-
-isTrue :: Value -> Bool
-isTrue (B True) = True
-isTrue _        = False
-
-isFalse :: Value -> Bool
-isFalse (B False) = True
-isFalse _         = False
-
-asI :: Value -> Value
-asI i@(I _) = i
-asI (D d)   = I . toInteger . fromEnum $ d
-
-asD :: Value -> Value
-asD d@(D _) = d
-asD (I i)   = D $ fromInteger i
+           | S String deriving (Eq,Ord)
 
 instance Show Value where
-    show (I i) = show i
-    show (D d) = show d
+    show (N n) = show n
     show (B b) = show b
     show (S s) = s
 
-instance Ord Value where
-    compare (I i) (I j) = compare i j
-    compare (I i) (D d) = compare (fromIntegral i) d
-    compare (D d) (I i) = compare d (fromIntegral i)
-    compare (B b) (B c) = compare b c
-    compare (S s) (S t) = compare s t
-
 instance Hashable Value where
-    hashWithSalt s (I i) = hashWithSalt s i
-    hashWithSalt s (D d) = hashWithSalt s d
+    hashWithSalt s (N n) = hashWithSalt s n
     hashWithSalt s (B b) = hashWithSalt s b
     hashWithSalt s (S t) = hashWithSalt s t
 
-instance Enum Value where
+is :: (Exp -> Maybe a) -> Exp -> Evaluate a
+is t e = case t e of
+           Just x  -> return x
+           Nothing -> failure "Expression of wrong type given."
+
+-- | A Numeric type of pure evil. Converts between Integers and Doubles
+-- where necessary. This allows it to be `Integral` and `Floating` at the same
+-- time.
+data Number = I Integer | D Double deriving (Eq)
+
+instance Show Number where
+    show (I i) = show i
+    show (D d) = show d
+
+-- | Important for typechecking.
+num :: Exp -> Maybe Number
+num (Val (N n)) = Just n
+num _ = Nothing
+
+bool :: Exp -> Maybe Bool
+bool (Val (B b)) = Just b
+bool _ = Nothing
+
+str :: Exp -> Maybe String
+str (Val (S s)) = Just s
+str _ = Nothing
+
+-- The opposites.
+fromNum :: Number -> Exp
+fromNum = Val . N
+
+fromBool :: Bool -> Exp
+fromBool = Val . B
+
+fromStr :: String -> Exp
+fromStr = Val. S
+
+asI :: Number -> Number
+asI i@(I _) = i
+asI (D d)   = I . toInteger . fromEnum $ d
+
+asD :: Number -> Number
+asD d@(D _) = d
+asD (I i)   = D $ fromInteger i
+
+instance Hashable Number where
+    hashWithSalt s (I i) = hashWithSalt s i
+    hashWithSalt s (D d) = hashWithSalt s d
+
+instance Ord Number where
+    compare (I i) (I j) = compare i j
+    compare (I i) (D d) = compare (fromIntegral i) d
+    compare (D d) (I i) = compare d (fromIntegral i)
+    compare (D d) (D h) = compare d h
+
+instance Enum Number where
     toEnum = I . toInteger
     fromEnum (I i) = fromEnum i
     fromEnum (D d) = fromEnum d
 
-instance Fractional Value where
+instance Fractional Number where
     fromRational = D . fromRational
     (D d1) / (D d2) = D $ d1 / d2
     x / y = asD x / asD y
 
-instance Real Value where
+instance Real Number where
     toRational (I i) = toRational i
     toRational (D d) = toRational d
 
-instance Integral Value where
+instance Integral Number where
     toInteger (I i) = i
     toInteger v     = toInteger $ asI v
     quotRem (I i1) (I i2) = first I . second I $ quotRem i1 i2
     quotRem x y = quotRem (asI x) (asI y)
 
 -- Yes, boilerplate!
-instance Floating Value where
+instance Floating Number where
     pi = D $ tau / 2
 
     exp (D d) = D $ exp d
@@ -183,7 +214,7 @@ instance Floating Value where
     atanh (D d) = D $ atanh d
     atanh x     = atanh $ asD x
 
-instance Num Value where
+instance Num Number where
     I i + I j = I $ i + j
     D d + D f = D $ d + f
     x + y = asD x + asD y

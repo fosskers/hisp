@@ -3,7 +3,7 @@
 module Hisp.Scope where
 
 import Control.Monad.State.Lazy
-import Data.Map.Lazy (insert,empty,foldlWithKey)
+import Data.Map.Lazy (insert,foldlWithKey)
 
 import Hisp.Utils (fork)
 import Hisp.Types

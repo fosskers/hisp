@@ -12,23 +12,22 @@ import Prelude hiding (lookup)
 import Control.Monad.State.Lazy
 
 import Data.Map.Lazy       (fromList, empty)
-import Control.Applicative ((<*),(<$>),(<*>))
+import Control.Applicative ((<*))
 import Data.Hashable       (hash)
 
---import Hisp.Base
 import Hisp.Types
 import Hisp.Scope
 
 ---
 
 -- | The Evaluation Function
-e :: Exp -> Evaluate Value
-e (Val a)       = return a
-e (Symbol n h)  = return $ S n
+e :: Exp -> Evaluate Exp
+e v@(Val _)      = return v
+e s@(Symbol _ _) = return s
 e (List ((Symbol n h):es)) =
     get >>= function n h >>= \f -> argCheck f es >>
     local f es >> bindParamCalls f >>= \f' -> apply f' es <* popScope
-e (List _) = failure "Eval.e: Need a returnable Value type for Lists!"
+e l@(List _) = return l
 
 argCheck :: Function -> [Exp] -> Evaluate a
 argCheck f es | numOkay (funcArgs f) (length es) = return undefined
@@ -63,8 +62,8 @@ local :: Function -> [Exp] -> Evaluate ()
 local (Function _ _ _ (AtLeast _) _) _     = modify (empty :)
 local (Function _ _ _ (Exactly _ ah) _) es = modify (ns :)
     where ns = fromList $ zipWith toF ah es
-          toF (Symbol a _) (Val v) = ((a,h), Function a h Nothing noArgs (none v))
-              where h = hash v
+          toF (Symbol a _) v@(Val v') = ((a,h), Function a h Nothing noArgs (none v))
+              where h = hash v'
 --          toF (Symbol a _) (Symbol n h') = ((a,h'), Function a h' Nothing noArgs (none v))
           toF (Symbol a _) (List es') = ((a,h), Function a h Nothing (AtLeast 0)
                                        (\es'' -> e $ List (es' ++ es'')))
@@ -97,26 +96,26 @@ badArgs f es = "Wrong number of args given to: {{ " ++ funcName f ++ " }}" ++
                show (length es) ++ "."
 
 -- | For functions that take exactly one argument.
-one :: (Value -> a) -> [Exp] -> Evaluate a
-one f [n] = f `fmap` e n
-one _ _   = failure "Single arg function applied to multiple arguments."
+one :: (Exp -> Maybe a) -> (a -> b) -> [Exp] -> Evaluate b
+one t f [n] = fmap f $ e n >>= is t
+one _ _ _   = failure "Single arg function applied to multiple arguments."
 
 -- | For functions that take exactly two arguments.
-two :: (Value -> Value -> a) -> [Exp] -> Evaluate a
-two f (x:y:_) = f <$> e x <*> e y
-two _ _       = failure "Two arg function applied to less than two arguments."
+two :: (Exp -> Maybe a) -> (a -> a -> b) -> [Exp] -> Evaluate b
+two t f (x:y:_) = liftM2 f (e x >>= is t) (e y >>= is t)
+two _ _ _       = failure "Two arg function applied to less than two arguments."
 
-three :: (Value -> Value -> Value -> a) -> [Exp] -> Evaluate a
-three f (x:y:z:_) = f <$> e x <*> e y <*> e z
-three _ _ = failure "Three arg function applied to less than three arguments."
+three :: (Exp -> Maybe a) -> (a -> a -> a -> b) -> [Exp] -> Evaluate b
+three t f (x:y:z:_) = liftM3 f (e x >>= is t) (e y >>= is t) (e z >>= is t)
+three _ _ _ = failure "Three arg function applied to less than three arguments."
 
 -- | For functions that take no arguments.
 none :: Monad m => a -> b -> m a
 none = const . return
 
-foldE :: (Value -> Value -> Value) -> Value -> [Exp] -> Evaluate Value
-foldE f = foldM (\acc n' -> f acc `fmap` e n')
+foldE :: (Exp -> Maybe a) -> (a -> a -> a) -> a -> [Exp] -> Evaluate a
+foldE t f = foldM (\acc x -> f acc `fmap` (e x >>= is t))
 
-foldE1 :: (Value -> Value -> Value) -> [Exp] -> Evaluate Value
-foldE1 _ []     = failure "No Expressions available to fold."  -- Needed?
-foldE1 f (n:ns) = e n >>= \n' -> foldE f n' ns
+foldE1 :: (Exp -> Maybe a) -> (a -> a -> a) -> [Exp] -> Evaluate a
+foldE1 _ _ []     = failure "No Expressions available to fold."  -- Needed?
+foldE1 t f (x:xs) = e x >>= is t >>= \x' -> foldE t f x' xs
