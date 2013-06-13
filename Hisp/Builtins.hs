@@ -37,7 +37,9 @@ builtins =
   , Function "else" 23 Nothing noArgs (none $ fromBool True)
   , Function "tau"  24 Nothing noArgs (none $ fromNum tau)
   , Function "pi"   25 Nothing noArgs (none $ fromNum pi)
-  , Function "x"    26 Nothing noArgs (none $ fromNum 0) ]
+  , Function "x"    26 Nothing noArgs (none $ fromNum 0)
+  , Function ":"    27 Nothing (Exactly 2 []) (\(x:es:_) -> cons x es)
+  , Function "head" 28 Nothing (Exactly 1 []) (\(x:_) -> car x) ]
 
 ifBlock :: [Exp] -> Evaluate Exp
 ifBlock (p:a:b:_) = e p >>= is bool >>= \p' -> if p' then e a else e b
@@ -46,3 +48,14 @@ ifBlock _ = failure "Too many arguments to `if` block."
 condBlock :: [(Exp,Exp)] -> Evaluate Exp
 condBlock ((p,a):es) = e p >>= is bool >>= \p' -> if p' then e a else condBlock es
 condBlock [] = failure "Non-terminating `cond` block given."
+
+-----------------
+-- List functions
+-----------------
+cons :: Exp -> Exp -> Evaluate Exp
+cons x (List es) = return $ List $ x : es
+cons _ _ = failure "Second argument was not a List."
+
+car :: Exp -> Evaluate Exp
+car (List (x:_)) = return x
+car _ = failure "Empty list."

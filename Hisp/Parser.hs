@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 
-module Hisp.Parser where  --( parseExp ) where
+module Hisp.Parser ( parseExp ) where
 
 import Text.ParserCombinators.Parsec hiding ((<|>))
 import Control.Applicative           hiding (many)
@@ -88,6 +88,7 @@ lambda = do
   let ps' = expList ps
       name  = "lambda"
       hash' = hash $ show body  -- Should be unique enough. Inefficient?
-      func  = Function name hash' (Just body) (Exactly (length ps') ps') (const $ e body)
+      func  = Function name hash' (Just body)
+              (Exactly (length ps') ps') (const $ e body)
   modifyState $ newLambda func
   return $ Symbol name hash'
