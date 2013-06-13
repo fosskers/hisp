@@ -24,10 +24,14 @@ import Hisp.Scope
 e :: Exp -> Evaluate Exp
 e v@(Val _)      = return v
 e s@(Symbol _ _) = return s
-e (List ((Symbol n h):es)) =
-    get >>= function n h >>= \f -> argCheck f es >>
-    local f es >> bindParamCalls f >>= \f' -> apply f' es <* popScope
-e l@(List _) = return l
+e (List (x:es))  = e x >>= \x' ->
+  case x' of
+    Symbol n h -> do
+      f  <- get >>= function n h
+      f' <- argCheck f es >> local f es >> bindParamCalls f
+      apply f' es <* popScope
+    _ -> return $ List (x':es)
+e l@(List []) = return l
 
 argCheck :: Function -> [Exp] -> Evaluate a
 argCheck f es | numOkay (funcArgs f) (length es) = return undefined
