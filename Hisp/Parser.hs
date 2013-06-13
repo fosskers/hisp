@@ -27,7 +27,7 @@ atom :: HispParser Exp
 atom = (datum <|> sexp) <* spaces
 
 datum :: HispParser Exp
-datum = number <|> boolean <|> symbol
+datum = number <|> boolean <|> chars <|> symbol
 
 number :: HispParser Exp
 number = do
@@ -48,6 +48,11 @@ boolean = (Val $ B True)  <$ string "True"
 
 symbol :: HispParser Exp
 symbol = flip Symbol noHash <$> (many1 $ noneOf "\n()[] ")
+
+-- Which is of course, a String.
+-- Doesn't seem to allow multiline strings.
+chars :: HispParser Exp
+chars = char '"' *> (Val . S <$> many (noneOf "\n\"")) <* char '"'
 
 sexp :: HispParser Exp
 sexp = char '(' *> spaces *> (function <|> list) <* char ')'
