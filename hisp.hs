@@ -94,12 +94,12 @@ help = global >>= \bs -> liftIO $ do
                  , "2. You can define your own functions with `define`:"
                  , "     (define foo 5)"
                  , "     (define bar (* foo 2))"
-                 , "     (define baz [a b] (+ a b))"
+                 , "     (define baz (a b) (+ a b))"
                  , "3. You can pass functions and also partially apply them:"
-                 , "     (define $ [f a] (f a))"
+                 , "     (define $ (f a) (f a))"
                  , "     ($ sin 1)"
                  , "     ($ (+ 1) 1)"
-                 , "     ($ (lambda [a] (+ 1 a)) 1)"
+                 , "     ($ (lambda (a) (+ 1 a)) 1)"
                  , "4. Feel free to write expressions over multiple lines." ]
 
 parse :: String -> Evaluate Exp

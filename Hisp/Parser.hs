@@ -50,7 +50,10 @@ symbol :: HispParser Exp
 symbol = flip Symbol noHash <$> (many1 $ noneOf "\n()[] ")
 
 sexp :: HispParser Exp
-sexp = char '(' *> spaces *> (define <|> list) <* char ')'
+sexp = char '(' *> spaces *> (function <|> list) <* char ')'
+
+function :: HispParser Exp
+function = define <|> lambda
 
 list :: HispParser Exp
 list = List <$> many atom
@@ -73,14 +76,13 @@ define = do
 functionBody :: HispParser (Exp,Exp)
 functionBody = (,) <$> (option (List []) sexp <* spaces) <*> atom
 
-{-}
 lambda :: HispParser Exp
 lambda = do
   string "lambda" >> spaces
-  (ps,body) <- first (map (,noHash)) `fmap` functionBody
-  let name  = "lambda"
-      hash' = hash $ show body  -- Should be unique enough.
-      func  = Function name hash' (Just body) (Exactly (length ps) ps) (const $ e body)
+  (ps,body) <- functionBody
+  let ps' = expList ps
+      name  = "lambda"
+      hash' = hash $ show body  -- Should be unique enough. Inefficient?
+      func  = Function name hash' (Just body) (Exactly (length ps') ps') (const $ e body)
   modifyState $ newLambda func
-  return $ Call "lambda" hash' []
--}
+  return $ Symbol name hash'

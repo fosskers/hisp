@@ -64,7 +64,7 @@ local (Function _ _ _ (Exactly _ ah) _) es = modify (ns :)
     where ns = fromList $ zipWith toF ah es
           toF (Symbol a _) v@(Val v') = ((a,h), Function a h Nothing noArgs (none v))
               where h = hash v'
-          toF (Symbol a _) s@(Symbol _ h') = ((a,h'), Function a h' Nothing noArgs (none s))
+--          toF (Symbol a _) s@(Symbol _ h') = ((a,h'), Function a h' Nothing (AtLeast 0) (none s))  -- This needs a better hash value...
           toF (Symbol a _) (List es') = ((a,h), Function a h Nothing (AtLeast 0)
                                        (\es'' -> e $ List (es' ++ es'')))
               where h = hash $ show es'  -- Must be very unique.
