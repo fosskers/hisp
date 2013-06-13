@@ -27,10 +27,11 @@ e s@(Symbol _ _) = return s
 e (List (x:es))  = e x >>= \x' ->
   case x' of
     Symbol n h -> do
-      f  <- get >>= function n h
-      f' <- argCheck f es >> local f es >> bindParamCalls f
+      f   <- get >>= function n h
+      f'  <- argCheck f es >> local f es >> bindParamCalls f
       apply f' es <* popScope
-    _ -> return $ List (x':es)
+--      (mapM e es >>= apply f') <* popScope  -- Breaks recursion.
+    _ -> (List . (x' :)) `fmap` mapM e es
 e l@(List []) = return l
 
 argCheck :: Function -> [Exp] -> Evaluate a
@@ -68,7 +69,7 @@ local (Function _ _ _ (Exactly _ ah) _) es = modify (ns :)
     where ns = fromList $ zipWith toF ah es
           toF (Symbol a _) v@(Val v') = ((a,h), Function a h Nothing noArgs (none v))
               where h = hash v'
---          toF (Symbol a _) s@(Symbol _ h') = ((a,h'), Function a h' Nothing (AtLeast 0) (none s))  -- This needs a better hash value...
+--          toF (Symbol a _) s@(Symbol _ h') = ((a,h'), Function a h' Nothing (AtLeast 0) (none s))  -- This needs a better hash value... and is holding back progress!
           toF (Symbol a _) (List es') = ((a,h), Function a h Nothing (AtLeast 0)
                                        (\es'' -> e $ List (es' ++ es'')))
               where h = hash $ show es'  -- Must be very unique.
