@@ -20,6 +20,7 @@ It doesn't have:
 * loops
 * (real) IO
 * quoting
+* macros
 
 It wants:
 

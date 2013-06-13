@@ -39,7 +39,8 @@ builtins =
   , Function "pi"   25 Nothing noArgs (none $ fromNum pi)
   , Function "x"    26 Nothing noArgs (none $ fromNum 0)
   , Function ":"    27 Nothing (Exactly 2 []) (\(x:es:_) -> cons x es)
-  , Function "head" 28 Nothing (Exactly 1 []) (\(x:_) -> car x) ]
+  , Function "head" 28 Nothing (Exactly 1 []) (\(x:_) -> car x)
+  , Function "range" 29 Nothing (Exactly 2 []) (\(x:y:_) -> range x y) ]
 
 ifBlock :: [Exp] -> Evaluate Exp
 ifBlock (p:a:b:_) = e p >>= is bool >>= \p' -> if p' then e a else e b
@@ -59,3 +60,9 @@ cons _ _ = failure "Second argument was not a List."
 car :: Exp -> Evaluate Exp
 car (List (x:_)) = return x
 car _ = failure "Empty list."
+
+range :: Exp -> Exp -> Evaluate Exp
+range x y = do
+  x' <- e x >>= is num
+  y' <- e y >>= is num
+  return . List . map (Val . N) $ [x' .. y']
