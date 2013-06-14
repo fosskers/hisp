@@ -87,6 +87,10 @@ instance Show Exp where
     show (Symbol n h) = n ++ " @ " ++ show h
     show (List es) = "(" ++ unwords (map show es) ++ ")"
 
+lst :: Exp -> Maybe [Exp]
+lst (List es) = Just es
+lst _         = Nothing
+
 isSymbol :: Exp -> Bool
 isSymbol (Symbol _ _) = True
 isSymbol _            = False
