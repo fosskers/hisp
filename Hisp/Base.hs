@@ -16,7 +16,7 @@ inject :: Monad m => Exp -> StateT [Scope] m ()
 inject v = get >>= \ss -> put (newGlobal (newX v) ss)
 
 newX :: Exp -> Function
-newX x = Function "x" 26 Nothing (Exactly 0 []) (none x)
+newX x = Function "x" 124 Nothing (Exactly 0 []) (none x)
 
 symbolString :: Monad m => Exp -> m String
 symbolString (Symbol s _) = return s

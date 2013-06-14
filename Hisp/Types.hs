@@ -84,7 +84,7 @@ data Exp = Val Value
 
 instance Show Exp where
     show (Val v) = show v
-    show (Symbol n h) = n ++ " @ " ++ show h
+    show (Symbol n h) = n -- ++ " @ " ++ show h
     show (List es) = "(" ++ unwords (map show es) ++ ")"
 
 lst :: Exp -> Maybe [Exp]
