@@ -18,8 +18,11 @@ import Hisp.Utils (tau)
 
 ---
 
---newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
---  deriving ( Monad, MonadError EvalError, MonadState [Scope], Functor, Applicative)
+{-}
+newtype Evaluate a = E { runE :: ErrorT EvalError (StateT [Scope] IO) a }
+  deriving ( Monad, MonadError EvalError, MonadState [Scope]
+           , MonadIO, Functor, Applicative)
+-}
 
 newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
   deriving ( Monad, MonadError EvalError, MonadState [Scope]
@@ -84,7 +87,7 @@ data Exp = Val Value
 
 instance Show Exp where
     show (Val v)      = show v
-    show (Symbol n h) = n -- ++ " @ " ++ show h
+    show (Symbol n _) = n -- ++ " @ " ++ show h
     show l@(List es) | isString l = foldr (\(Val (C c)) s -> c : s) "" es
                      | otherwise  = "(" ++ unwords (map show es) ++ ")"
 

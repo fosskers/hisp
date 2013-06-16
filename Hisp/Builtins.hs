@@ -46,8 +46,8 @@ mathFunctions =
   , Function "sqrt" 121 Nothing (Exactly 1 []) (evalNum one sqrt)
   , Function "tau"  122 Nothing noArgs (none $ fromNum tau)
   , Function "pi"   123 Nothing noArgs (none $ fromNum pi)
-  , Function "x"    124 Nothing noArgs (none $ fromNum 0)
-  , Function "range" 125 Nothing (Exactly 2 []) (\(x:y:_) -> range x y) ]
+  , Function "x"    124 Nothing noArgs (none $ fromNum 0) ]
+--  , Function "range" 125 Nothing (Exactly 2 []) (\(x:y:_) -> range x y) ]
 
 listFunctions :: [Function]
 listFunctions =
@@ -79,10 +79,11 @@ evalNum f g es = fromNum <$> f num g es
 cons :: Exp -> Exp -> Evaluate Exp
 cons x l@(List ((Symbol _ _):_)) = do
   l' <- e l
+  x' <- e x
   case l' of
-    List l'' -> return $ List $ x : l''
+    List l'' -> return $ List $ x' : l''
     _        -> failure "Second argument did not evaluate to a List."
-cons x (List es) = return $ List $ x : es
+cons x (List es) = e x >>= \x' -> return $ List $ x' : es
 cons _ _         = failure "Second argument was not a List."
 
 car :: Exp -> Evaluate Exp
@@ -93,11 +94,13 @@ cdr :: Exp -> Evaluate Exp
 cdr (List (_:es)) = return $ List es
 cdr _ = failure "Empty list."
 
+{-}
 range :: Exp -> Exp -> Evaluate Exp
 range x y = do
   x' <- e x >>= is num
   y' <- e y >>= is num
   return . List . map (Val . N) $ [x' .. y']
+-}
 
 apply' :: Exp -> [Exp] -> Evaluate Exp
 apply' f es = (List . (f :)) `fmap` mapM e es >>= e

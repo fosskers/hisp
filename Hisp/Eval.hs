@@ -30,7 +30,6 @@ e (List (x:es))  = e x >>= \x' ->
       f   <- get >>= function n h
       f'  <- argCheck f es >> local f es >> bindParamCalls f
       apply f' es <* popScope
---      (mapM e es >>= apply f') <* popScope  -- Breaks recursion.
     _ -> (List . (x' :)) `fmap` mapM e es
 e l@(List []) = return l
 
@@ -65,14 +64,17 @@ functionByName n (s:ss) = case searchByName n s of
 -- Binds arguments to parameter names.
 local :: Function -> [Exp] -> Evaluate ()
 local (Function _ _ _ (AtLeast _) _) _     = modify (empty :)
-local (Function _ _ _ (Exactly _ ah) _) es = modify (ns :)
-    where ns = fromList $ zipWith toF ah es
-          toF (Symbol a _) v@(Val v') = ((a,h), Function a h Nothing noArgs (none v))
-              where h = hash v'
+local (Function _ _ _ (Exactly _ ah) _) es = do
+  depth <- length `fmap` get
+  let ns = fromList $ zipWith toF ah es
+      toF (Symbol a _) v@(Val v') = let h = hash v' in
+                                    ((a,h), Function a h Nothing noArgs (none v))
+      toF (Symbol a _) (List es') = let h = hash $ show es' ++ show depth in
+                                    ((a,h), Function a h Nothing (AtLeast 0)
+                                     (\es'' -> e $ List (es' ++ es'')))  -- Wierd...
+  modify (ns :)
+
 --          toF (Symbol a _) s@(Symbol _ h') = ((a,h'), Function a h' Nothing (AtLeast 0) (none s))  -- This needs a better hash value... and is holding back progress!
-          toF (Symbol a _) (List es') = ((a,h), Function a h Nothing (AtLeast 0)
-                                       (\es'' -> e $ List (es' ++ es'')))
-              where h = hash $ show es'  -- Must be very unique.
 
 -- | Needs to be called after `local`.
 -- No body means it's a builtin function.
