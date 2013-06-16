@@ -83,9 +83,18 @@ data Exp = Val Value
            deriving (Eq,Ord)
 
 instance Show Exp where
-    show (Val v) = show v
+    show (Val v)      = show v
     show (Symbol n h) = n -- ++ " @ " ++ show h
-    show (List es) = "(" ++ unwords (map show es) ++ ")"
+    show l@(List es) | isString l = foldr (\(Val (C c)) s -> c : s) "" es
+                     | otherwise  = "(" ++ unwords (map show es) ++ ")"
+
+isString :: Exp -> Bool
+isString (List es) = and $ map isChar es
+isString _         = False
+
+isChar :: Exp -> Bool
+isChar (Val (C _)) = True
+isChar _           = False
 
 lst :: Exp -> Maybe [Exp]
 lst (List es) = Just es
@@ -100,17 +109,17 @@ isSymbol _            = False
 ------------------
 data Value = N Number
            | B Bool
-           | S String deriving (Eq,Ord)
+           | C Char deriving (Eq,Ord)
 
 instance Show Value where
     show (N n) = show n
     show (B b) = show b
-    show (S s) = s
+    show (C c) = show c
 
 instance Hashable Value where
     hashWithSalt s (N n) = hashWithSalt s n
     hashWithSalt s (B b) = hashWithSalt s b
-    hashWithSalt s (S t) = hashWithSalt s t
+    hashWithSalt s (C c) = hashWithSalt s c
 
 is :: (Exp -> Maybe a) -> Exp -> Evaluate a
 is t e = case t e of
@@ -135,9 +144,9 @@ bool :: Exp -> Maybe Bool
 bool (Val (B b)) = Just b
 bool _ = Nothing
 
-str :: Exp -> Maybe String
-str (Val (S s)) = Just s
-str _ = Nothing
+--str :: Exp -> Maybe String
+--str (Val (S s)) = Just s
+--str _ = Nothing
 
 -- The opposites.
 fromNum :: Number -> Exp
@@ -146,8 +155,8 @@ fromNum = Val . N
 fromBool :: Bool -> Exp
 fromBool = Val . B
 
-fromStr :: String -> Exp
-fromStr = Val. S
+--fromStr :: String -> Exp
+--fromStr = Val. S
 
 asI :: Number -> Number
 asI i@(I _) = i

@@ -57,8 +57,8 @@ listFunctions =
   , Function "concat" 204 Nothing (AtLeast 2)  (\es -> List <$> foldE1 lst (++) es) ]
 
 otherFunctions :: [Function]
-otherFunctions =
-  [ Function "show" 901 Nothing (Exactly 1 []) (\(x:_) -> return (Val . S $ show x)) ]
+otherFunctions = []
+--  [ Function "show" 901 Nothing (Exactly 1 []) (\(x:_) -> return (Val . S $ show x)) ]
 
 ifBlock :: [Exp] -> Evaluate Exp
 ifBlock (p:a:b:_) = e p >>= is bool >>= \p' -> if p' then e a else e b
