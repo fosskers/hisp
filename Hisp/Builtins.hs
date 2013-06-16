@@ -77,14 +77,13 @@ evalNum f g es = fromNum <$> f num g es
 -- List functions
 -----------------
 cons :: Exp -> Exp -> Evaluate Exp
-cons x (List es) = return $ List $ x : es
-{-}
-  l' <- e l  -- I'm meh about this. Breaks lazy evaluation, doesn't it?
+cons x l@(List ((Symbol _ _):_)) = do
+  l' <- e l
   case l' of
     List l'' -> return $ List $ x : l''
-    _         -> failure "Second argument did not evaluate to a List."
--}
-cons _ _ = failure "Second argument was not a List."
+    _        -> failure "Second argument did not evaluate to a List."
+cons x (List es) = return $ List $ x : es
+cons _ _         = failure "Second argument was not a List."
 
 car :: Exp -> Evaluate Exp
 car (List (x:_)) = return x
