@@ -1,0 +1,22 @@
+(define square (n) (^ (n) 2))
+
+(define cube (n) (^ (n) 3))
+
+(define pos? (n) (> (n) 0))
+
+(define neg? (n) (< (n) 0))
+
+(define id (n) (n))
+
+(define $ (f a) ((f) (a)))
+
+(define range (a b) (if (= (a) (b))
+                        ((a))
+                        (: (a) (range (+ 1 (a)) (b)))))
+
+(define null (l) (= 0 (len (l))))
+
+(define map (f l) (if (null (l))
+                      ()
+                      (: ((f) (head (l)))
+                         (map (f) (tail (l))))))
