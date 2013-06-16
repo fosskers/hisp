@@ -67,14 +67,16 @@ local (Function _ _ _ (AtLeast _) _) _     = modify (empty :)
 local (Function _ _ _ (Exactly _ ah) _) es = do
   depth <- length `fmap` get
   let ns = fromList $ zipWith toF ah es
-      toF (Symbol a _) v@(Val v') = let h = hash v' in
-                                    ((a,h), Function a h Nothing noArgs (none v))
-      toF (Symbol a _) (List es') = let h = hash $ show es' ++ show depth in
-                                    ((a,h), Function a h Nothing (AtLeast 0)
-                                     (\es'' -> e $ List (es' ++ es'')))  -- Wierd...
+      toF (Symbol a _) v@(Val v') =
+          let h = hash v' in
+          ((a,h), Function a h Nothing noArgs (none v))
+      toF (Symbol a _) (List es') =
+          let h = hash $ show es' ++ show depth in
+          ((a,h), Function a h Nothing (AtLeast 0)
+           (\es'' -> e $ List (es' ++ es'')))
+      toF (Symbol a _) s@(Symbol _ h') =
+          ((a,h'), Function a h' Nothing (AtLeast 0) (none s))
   modify (ns :)
-
---          toF (Symbol a _) s@(Symbol _ h') = ((a,h'), Function a h' Nothing (AtLeast 0) (none s))  -- This needs a better hash value... and is holding back progress!
 
 -- | Needs to be called after `local`.
 -- No body means it's a builtin function.
