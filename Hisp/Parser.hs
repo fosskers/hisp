@@ -61,7 +61,7 @@ sexp :: HispParser Exp
 sexp = char '(' *> spaces *> (function <|> list) <* char ')'
 
 function :: HispParser Exp
-function = define <|> lambda
+function = try (define <|> lambda)
 
 list :: HispParser Exp
 list = List <$> many atom

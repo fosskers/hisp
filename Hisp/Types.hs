@@ -88,7 +88,8 @@ data Exp = Val Value
 instance Show Exp where
     show (Val v)      = show v
     show (Symbol n _) = n -- ++ " @ " ++ show h
-    show l@(List es) | isString l = foldr (\(Val (C c)) s -> c : s) "" es
+    show l@(List es) | null es    = "()"
+                     | isString l = foldr (\(Val (C c)) s -> c : s) "" es
                      | otherwise  = "(" ++ unwords (map show es) ++ ")"
 
 isString :: Exp -> Bool
@@ -102,6 +103,10 @@ isChar _           = False
 lst :: Exp -> Maybe [Exp]
 lst (List es) = Just es
 lst _         = Nothing
+
+sym :: Exp -> Maybe Exp
+sym s@(Symbol _ _) = Just s
+sym _              = Nothing
 
 isSymbol :: Exp -> Bool
 isSymbol (Symbol _ _) = True

@@ -51,10 +51,14 @@ mathFunctions =
 
 listFunctions :: [Function]
 listFunctions =
-  [ Function ":"    201 Nothing (Exactly 2 []) (\(x:es:_) -> cons x es)
-  , Function "head" 202 Nothing (Exactly 1 []) (\(x:_) -> car x)
-  , Function "tail" 203 Nothing (Exactly 1 []) (\(x:_) -> cdr x)
-  , Function "concat" 204 Nothing (AtLeast 2)  (\es -> List <$> foldE1 lst (++) es) ]
+  [ Function ":"    201 Nothing (Exactly 2 []) (\(x:es:_) -> is lst es >> cons x es)
+  , Function "head" 202 Nothing (Exactly 1 []) (\(x:_) -> is lst x >> car x)
+  , Function "tail" 203 Nothing (Exactly 1 []) (\(x:_) -> is lst x >> cdr x)
+  , Function "concat" 204 Nothing (AtLeast 2)  (\es -> List <$> foldE1 lst (++) es)
+  , Function "len"  205 Nothing (Exactly 1 []) (\(x:_) -> is lst x >> len x)
+  , Function "rangeH" 206 Nothing (Exactly 2 []) (\(x:y:_) -> rangeH x y)
+  , Function "mapH" 207 Nothing (Exactly 2 [])
+    (\(f:es:_) -> is sym f >> is lst es >> mapH f es) ]
 
 otherFunctions :: [Function]
 otherFunctions = []
@@ -77,12 +81,7 @@ evalNum f g es = fromNum <$> f num g es
 -- List functions
 -----------------
 cons :: Exp -> Exp -> Evaluate Exp
-cons x l@(List ((Symbol _ _):_)) = do
-  l' <- e l
-  x' <- e x
-  case l' of
-    List l'' -> return $ List $ x' : l''
-    _        -> failure "Second argument did not evaluate to a List."
+cons x l@(List ((Symbol _ _):_)) = e x >>= \x' -> evalList (List . (x' :)) l
 cons x (List es) = e x >>= \x' -> return $ List $ x' : es
 cons _ _         = failure "Second argument was not a List."
 
@@ -94,13 +93,24 @@ cdr :: Exp -> Evaluate Exp
 cdr (List (_:es)) = return $ List es
 cdr _ = failure "Empty list."
 
-{-}
-range :: Exp -> Exp -> Evaluate Exp
-range x y = do
+len :: Exp -> Evaluate Exp
+len l = evalList (fromNum . I . toInteger . length) l
+
+evalList :: ([Exp] -> a) -> Exp -> Evaluate a
+evalList f l = e l >>= \l' ->
+  case l' of
+    List l'' -> return $ f l''
+    _        -> failure "Second argument did not evaluate to a List."
+
+-- This is much faster than the Hisp version.
+rangeH :: Exp -> Exp -> Evaluate Exp
+rangeH x y = do
   x' <- e x >>= is num
   y' <- e y >>= is num
   return . List . map (Val . N) $ [x' .. y']
--}
+
+mapH :: Exp -> Exp -> Evaluate Exp
+mapH s (List es) = List `fmap` mapM (\ex -> e $ List [s,ex]) es
 
 apply' :: Exp -> [Exp] -> Evaluate Exp
 apply' f es = (List . (f :)) `fmap` mapM e es >>= e
