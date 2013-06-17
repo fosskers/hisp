@@ -75,7 +75,7 @@ condBlock :: [(Exp,Exp)] -> Evaluate Exp
 condBlock ((p,a):es) = e p >>= is bool >>= \p' -> if p' then e a else condBlock es
 condBlock [] = failure "Non-terminating `cond` block given."
 
-type Evaluator a b = (Exp -> Maybe Number) -> a -> b -> Evaluate Number
+type Evaluator a b = (Exp -> Either String Number) -> a -> b -> Evaluate Number
 
 evalNum :: Evaluator a b -> a -> b -> Evaluate Exp
 evalNum f g es = fromNum <$> f num g es
@@ -120,9 +120,9 @@ filterH s l = evalList (\es -> List `fmap` filterM f es) l
     where f ex = do
             result <- e $ List [s,ex]
             case bool result of
-              Just True  -> return True
-              Just False -> return False
-              Nothing    -> failure "Function application did not yield a Boolean."
+              Right True  -> return True
+              Right False -> return False
+              Left _ -> failure "Function application did not yield a Boolean."
 
 apply' :: Exp -> [Exp] -> Evaluate Exp
 apply' f es = (List . (f :)) `fmap` mapM e es >>= e

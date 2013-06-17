@@ -92,6 +92,13 @@ instance Show Exp where
                      | isString l = foldr (\(Val (C c)) s -> c : s) "" es
                      | otherwise  = "(" ++ unwords (map show es) ++ ")"
 
+typeName :: Exp -> String
+typeName (Val (N _))  = "Number"
+typeName (Val (B _))  = "Boolean"
+typeName (Val (C _))  = "Char"
+typeName (Symbol _ _) = "Symbol"
+typeName (List _)     = "List"
+
 isString :: Exp -> Bool
 isString (List es) = and $ map isChar es
 isString _         = False
@@ -100,13 +107,13 @@ isChar :: Exp -> Bool
 isChar (Val (C _)) = True
 isChar _           = False
 
-lst :: Exp -> Maybe [Exp]
-lst (List es) = Just es
-lst _         = Nothing
+lst :: Exp -> Either String [Exp]
+lst (List es) = Right es
+lst ex        = badType "List" ex
 
-sym :: Exp -> Maybe Exp
-sym s@(Symbol _ _) = Just s
-sym _              = Nothing
+sym :: Exp -> Either String Exp
+sym s@(Symbol _ _) = Right s
+sym ex             = badType "Symbol" ex
 
 isSymbol :: Exp -> Bool
 isSymbol (Symbol _ _) = True
@@ -129,10 +136,13 @@ instance Hashable Value where
     hashWithSalt s (B b) = hashWithSalt s b
     hashWithSalt s (C c) = hashWithSalt s c
 
-is :: (Exp -> Maybe a) -> Exp -> Evaluate a
+is :: (Exp -> Either String a) -> Exp -> Evaluate a
 is t e = case t e of
-           Just x  -> return x
-           Nothing -> failure "Expression of wrong type given."
+           Right x -> return x
+           Left s  -> failure $ "Expression of wrong type given. " ++ s
+
+badType :: String -> Exp -> Either String a
+badType s ex = Left $ "Wanted `" ++ s ++ "`, given `" ++ typeName ex ++ "`."
 
 -- | A Numeric type of pure evil. Converts between Integers and Doubles
 -- where necessary. This allows it to be `Integral` and `Floating` at the same
@@ -144,17 +154,13 @@ instance Show Number where
     show (D d) = show d
 
 -- | Important for typechecking.
-num :: Exp -> Maybe Number
-num (Val (N n)) = Just n
-num _ = Nothing
+num :: Exp -> Either String Number
+num (Val (N n)) = Right n
+num ex          = badType "Number" ex
 
-bool :: Exp -> Maybe Bool
-bool (Val (B b)) = Just b
-bool _ = Nothing
-
---str :: Exp -> Maybe String
---str (Val (S s)) = Just s
---str _ = Nothing
+bool :: Exp -> Either String Bool
+bool (Val (B b)) = Right b
+bool ex          = badType "Boolean" ex
 
 -- The opposites.
 fromNum :: Number -> Exp

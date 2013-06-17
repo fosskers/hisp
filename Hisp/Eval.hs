@@ -75,7 +75,7 @@ local (Function _ _ _ (Exactly _ ah) _) es = do
           ((a,h), Function a h Nothing (AtLeast 0)
            (\es'' -> e $ List (es' ++ es'')))
       toF (Symbol a _) s@(Symbol _ h') =
-          ((a,h'), Function a h' Nothing (AtLeast 0) (none s))
+          ((a,h'), Function a h' Nothing noArgs (none s))  -- none s? Evil?
   modify (ns :)
 
 -- | Needs to be called after `local`.
@@ -105,16 +105,16 @@ badArgs f es = "Wrong number of args given to: {{ " ++ funcName f ++ " }}" ++
                show (length es) ++ "."
 
 -- | For functions that take exactly one argument.
-one :: (Exp -> Maybe a) -> (a -> b) -> [Exp] -> Evaluate b
+one :: (Exp -> Either String a) -> (a -> b) -> [Exp] -> Evaluate b
 one t f [n] = fmap f $ e n >>= is t
 one _ _ _   = failure "Single arg function applied to multiple arguments."
 
 -- | For functions that take exactly two arguments.
-two :: (Exp -> Maybe a) -> (a -> a -> b) -> [Exp] -> Evaluate b
+two :: (Exp -> Either String a) -> (a -> a -> b) -> [Exp] -> Evaluate b
 two t f (x:y:_) = liftM2 f (e x >>= is t) (e y >>= is t)
 two _ _ _       = failure "Two arg function applied to less than two arguments."
 
-three :: (Exp -> Maybe a) -> (a -> a -> a -> b) -> [Exp] -> Evaluate b
+three :: (Exp -> Either String a) -> (a -> a -> a -> b) -> [Exp] -> Evaluate b
 three t f (x:y:z:_) = liftM3 f (e x >>= is t) (e y >>= is t) (e z >>= is t)
 three _ _ _ = failure "Three arg function applied to less than three arguments."
 
@@ -122,9 +122,9 @@ three _ _ _ = failure "Three arg function applied to less than three arguments."
 none :: Monad m => a -> b -> m a
 none = const . return
 
-foldE :: (Exp -> Maybe a) -> (a -> a -> a) -> a -> [Exp] -> Evaluate a
+foldE :: (Exp -> Either String a) -> (a -> a -> a) -> a -> [Exp] -> Evaluate a
 foldE t f = foldM (\acc x -> f acc `fmap` (e x >>= is t))
 
-foldE1 :: (Exp -> Maybe a) -> (a -> a -> a) -> [Exp] -> Evaluate a
+foldE1 :: (Exp -> Either String a) -> (a -> a -> a) -> [Exp] -> Evaluate a
 foldE1 _ _ []     = failure "No Expressions available to fold."  -- Needed?
 foldE1 t f (x:xs) = e x >>= is t >>= \x' -> foldE t f x' xs
