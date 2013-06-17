@@ -20,3 +20,10 @@
                       ()
                       (: ((f) (head (l)))
                          (map (f) (tail (l))))))
+
+(define filter (p l)
+   (if (null (l))
+       ()
+       (if ((p) (head (l)))
+           (: (head (l)) (filter (p) (tail (l))))
+           (filter (p) (tail (l))))))

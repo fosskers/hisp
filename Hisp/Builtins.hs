@@ -1,6 +1,7 @@
 module Hisp.Builtins where
 
 import Control.Applicative ((<$>), (<*>))
+import Control.Monad (filterM)
 import Data.Map (fromList)
 
 import Hisp.Eval
@@ -58,7 +59,9 @@ listFunctions =
   , Function "len"  205 Nothing (Exactly 1 []) (\(x:_) -> is lst x >> len x)
   , Function "rangeH" 206 Nothing (Exactly 2 []) (\(x:y:_) -> rangeH x y)
   , Function "mapH" 207 Nothing (Exactly 2 [])
-    (\(f:es:_) -> is sym f >> is lst es >> mapH f es) ]
+    (\(f:es:_) -> is sym f >> is lst es >> mapH f es)
+  , Function "filterH" 208 Nothing (Exactly 2 [])
+    (\(f:es:_) -> is sym f >> is lst es >> filterH f es) ]
 
 otherFunctions :: [Function]
 otherFunctions = []
@@ -81,25 +84,25 @@ evalNum f g es = fromNum <$> f num g es
 -- List functions
 -----------------
 cons :: Exp -> Exp -> Evaluate Exp
-cons x l@(List ((Symbol _ _):_)) = e x >>= \x' -> evalList (List . (x' :)) l
+cons x l@(List ((Symbol _ _):_)) = e x >>= \x' -> evalList (return . List . (x' :)) l
 cons x (List es) = e x >>= \x' -> return $ List $ x' : es
 cons _ _         = failure "Second argument was not a List."
 
 car :: Exp -> Evaluate Exp
-car (List (x:_)) = return x
-car _ = failure "Empty list."
+car (List []) = failure "Empty list."
+car l         = evalList (return . head) l
 
 cdr :: Exp -> Evaluate Exp
 cdr (List (_:es)) = return $ List es
 cdr _ = failure "Empty list."
 
 len :: Exp -> Evaluate Exp
-len l = evalList (fromNum . I . toInteger . length) l
+len l = evalList (return . fromNum . I . toInteger . length) l
 
-evalList :: ([Exp] -> a) -> Exp -> Evaluate a
+evalList :: ([Exp] -> Evaluate a) -> Exp -> Evaluate a
 evalList f l = e l >>= \l' ->
   case l' of
-    List l'' -> return $ f l''
+    List l'' -> f l''
     _        -> failure "Second argument did not evaluate to a List."
 
 -- This is much faster than the Hisp version.
@@ -110,7 +113,16 @@ rangeH x y = do
   return . List . map (Val . N) $ [x' .. y']
 
 mapH :: Exp -> Exp -> Evaluate Exp
-mapH s (List es) = List `fmap` mapM (\ex -> e $ List [s,ex]) es
+mapH s l = evalList (\es -> List `fmap` mapM (\ex -> e $ List [s,ex]) es) l
+
+filterH :: Exp -> Exp -> Evaluate Exp
+filterH s l = evalList (\es -> List `fmap` filterM f es) l
+    where f ex = do
+            result <- e $ List [s,ex]
+            case bool result of
+              Just True  -> return True
+              Just False -> return False
+              Nothing    -> failure "Function application did not yield a Boolean."
 
 apply' :: Exp -> [Exp] -> Evaluate Exp
 apply' f es = (List . (f :)) `fmap` mapM e es >>= e
