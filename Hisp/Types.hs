@@ -231,9 +231,9 @@ instance Floating Number where
     exp (D d) = D $ exp d
     exp x     = exp $ asD x
     log (D d) = D $ log d
-    log x     = exp $ asD x
+    log x     = log $ asD x
     sin (D d) = D $ sin d
-    sin x     = exp $ asD x
+    sin x     = sin $ asD x
     cos (D d) = D $ cos d
     cos x     = cos $ asD x
 
