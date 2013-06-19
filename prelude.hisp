@@ -10,6 +10,7 @@
 
 (define $ (f a) ((f) (a)))
 
+; `rangeH` is must faster.
 (define range (a b) (if (= (a) (b))
                         ((a))
                         (: (a) (range (+ 1 (a)) (b)))))

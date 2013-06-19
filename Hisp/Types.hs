@@ -80,13 +80,15 @@ necArgs (AtLeast i)   = "at least " ++ show i
 ----------------
 -- S-EXPRESSIONS
 ----------------
-data Exp = Val Value
+data Exp = Comment
+         | Val Value
          | Symbol String Hash
          | Require { reqPath :: FilePath }
          | List { expList :: [Exp] }
            deriving (Eq,Ord)
 
 instance Show Exp where
+    show Comment      = "Comment"
     show (Val v)      = show v
     show (Symbol n _) = n -- ++ " @ " ++ show h
     show (Require fp) = "require -> " ++ fp
@@ -95,6 +97,7 @@ instance Show Exp where
                      | otherwise  = "(" ++ unwords (map show es) ++ ")"
 
 typeName :: Exp -> String
+typeName Comment      = "Comment"
 typeName (Val (N _))  = "Number"
 typeName (Val (B _))  = "Boolean"
 typeName (Val (C _))  = "Char"

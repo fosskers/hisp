@@ -1,6 +1,8 @@
 (require "fib.hisp")
 (require "prelude.hisp")
 
+; Unit tests for Hisp.
+
 (define assert (prep) (if (prep)
 	       	      	  "Okay!"
 			  "Failed."))
@@ -21,8 +23,14 @@
 "Testing (= (2 3 4) (map (lambda (z) (+ 1 (z))) (1 2 3)))..."
 (assertEq (2 3 4) (map (lambda (z) (+ 1 (z))) (1 2 3)))
 
+"Testing (= (2 3 4) (mapH (lambda (z) (+ 1 (z))) (1 2 3)))..."
+(assertEq (2 3 4) (mapH (lambda (z) (+ 1 (z))) (1 2 3)))
+
 "Testing (= (6 7 8)) (filter (lambda (z) (> (z) 5)) (1 2 3 4 5 6 7 8))..."
 (assertEq (6 7 8) (filter (lambda (z) (> (z) 5)) (1 2 3 4 5 6 7 8)))
+
+"Testing (= (6 7 8)) (filterH (lambda (z) (> (z) 5)) (1 2 3 4 5 6 7 8))..."
+(assertEq (6 7 8) (filterH (lambda (z) (> (z) 5)) (1 2 3 4 5 6 7 8)))
 
 "***Testing List Functions***"
 "Testing (= () ())..."

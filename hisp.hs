@@ -53,11 +53,12 @@ type StateIO s = StateT s IO
 main :: IO ()
 main = do
   args <- getArgs
-  void $ case parseFlags args of
-    ([],[])      -> runStateT repl initialState
-    ([],inp)     -> runStateT (run inp) initialState
-    ([Load],inp) -> load initialState inp >>= runStateT repl
-    ([Exec],inp) -> runStateT (rep $ concat inp) initialState
+  let core = case parseFlags args of
+               ([],[])      -> repl
+               ([],inp)     -> run inp
+               ([Load],inp) -> load inp >> repl
+               ([Exec],inp) -> rep $ concat inp
+  void $ runStateT core initialState
 
 -- | The bottom Scope is for lambdas. The next is for global functions.
 initialState :: [Scope]
@@ -65,9 +66,9 @@ initialState = [builtins,M.empty]
 
 -- | Only run one file.
 run :: [FilePath] -> StateIO [Scope] ()
-run []     = return ()
+run []    = return ()
 run (f:_) = do
-  es <- parseFile f
+  es <- parseFile [f]
   case es of
     [] -> return ()
     _  -> get >>= \ss -> do
@@ -78,19 +79,16 @@ run (f:_) = do
                                    (Right v,_)  -> print v)
 
 -- | For now this will just load, and not execute any function calls.
--- CONVERT THIS TO PARSEFILE.
-load :: [Scope] -> [FilePath] -> IO [Scope]
-load ss [] = return ss
-load ss fs = do
-  contents <- concat `fmap` mapM load' fs
-  case parseExp "" ss contents of
-    Left err      -> putStrLn ("Parsing Error:\n" ++ show err) >> return ss
-    Right (_,ss') -> do
-      let news = M.size (head ss') - M.size (head ss)
-          suff = if news == 1 then "" else "s"
-      putStrLn ("Done. Loaded " ++ show news ++ " function" ++ suff ++ ".")
-      return ss'
-    where load' f = putStrLn ("Loading " ++ f ++ "...") >> readFile f
+load :: [FilePath] -> StateIO [Scope] ()
+load [] = return ()
+load fs = do
+  liftIO $ mapM_ (\f -> putStrLn ("Loading " ++ f ++ "...")) fs
+  ss <- get
+  void $ parseFile fs
+  ss' <- get
+  let news = M.size (head ss') - M.size (head ss)
+      suff = if news == 1 then "" else "s"
+  liftIO $ putStrLn ("Done. Loaded " ++ show news ++ " function" ++ suff ++ ".")
 
 repl :: StateIO [Scope] ()
 repl = do
@@ -113,8 +111,8 @@ rep cs = get >>= \ss -> do
               (Right v, ss') -> put ss' >> inject v >> return (show v)
   putStrLn' $ ">>> " ++ output
 
-parseFile :: FilePath -> StateIO [Scope] [Exp]
-parseFile f = parseFile' [f] [] []
+parseFile :: [FilePath] -> StateIO [Scope] [Exp]
+parseFile fps = parseFile' fps [] []
 
 parseFile' :: [FilePath] -> [FilePath] -> [Exp] -> StateIO [Scope] [Exp]
 parseFile' [] _ es        = return es

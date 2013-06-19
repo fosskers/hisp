@@ -48,7 +48,6 @@ mathFunctions =
   , Function "tau"  122 Nothing noArgs (none $ fromNum tau)
   , Function "pi"   123 Nothing noArgs (none $ fromNum pi)
   , Function "x"    124 Nothing noArgs (none $ fromNum 0) ]
---  , Function "range" 125 Nothing (Exactly 2 []) (\(x:y:_) -> range x y) ]
 
 listFunctions :: [Function]
 listFunctions =

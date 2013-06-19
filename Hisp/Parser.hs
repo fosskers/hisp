@@ -21,7 +21,10 @@ parseExp :: FilePath -> [Scope] -> String -> Either ParseError ([Exp],[Scope])
 parseExp f ss = runParser ((,) <$> hisp <*> getState) ss f
 
 hisp :: HispParser [Exp]
-hisp = spaces *> many1 atom
+hisp = spaces *> many1 (comment <|> atom)
+
+comment :: HispParser Exp
+comment = char ';' *> (Comment <$ many (noneOf "\n")) <* spaces
 
 atom :: HispParser Exp
 atom = (datum <|> sexp) <* spaces
