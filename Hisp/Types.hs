@@ -18,15 +18,15 @@ import Hisp.Utils (tau)
 
 ---
 
-{-}
 newtype Evaluate a = E { runE :: ErrorT EvalError (StateT [Scope] IO) a }
   deriving ( Monad, MonadError EvalError, MonadState [Scope]
            , MonadIO, Functor, Applicative)
--}
 
+{-}
 newtype Evaluate a = E { runE :: ErrorT EvalError (State [Scope]) a }
   deriving ( Monad, MonadError EvalError, MonadState [Scope]
            , Functor, Applicative)
+-}
 
 data EvalError = M { errMsg :: String } deriving (Eq,Show)
 
@@ -34,8 +34,8 @@ instance Error EvalError where
     noMsg  = strMsg "No error message given."
     strMsg = M
 
-eval :: Evaluate a -> [Scope] -> (Either EvalError a, [Scope])
-eval a s = runState (runErrorT $ runE a) s
+eval :: Evaluate a -> [Scope] -> IO (Either EvalError a, [Scope])
+eval a s = runStateT (runErrorT $ runE a) s
 
 failure :: String -> Evaluate a
 failure = throwError . strMsg
@@ -99,14 +99,6 @@ typeName (Val (C _))  = "Char"
 typeName (Symbol _ _) = "Symbol"
 typeName (List _)     = "List"
 
-isString :: Exp -> Bool
-isString (List es) = and $ map isChar es
-isString _         = False
-
-isChar :: Exp -> Bool
-isChar (Val (C _)) = True
-isChar _           = False
-
 lst :: Exp -> Either String [Exp]
 lst (List es) = Right es
 lst ex        = badType "List" ex
@@ -118,6 +110,18 @@ sym ex             = badType "Symbol" ex
 isSymbol :: Exp -> Bool
 isSymbol (Symbol _ _) = True
 isSymbol _            = False
+
+isString :: Exp -> Bool
+isString (List es) = and $ map isChar es
+isString _         = False
+
+isChar :: Exp -> Bool
+isChar (Val (C _)) = True
+isChar _           = False
+
+isList :: Exp -> Bool
+isList (List _) = True
+isList _        = False
 
 ------------------
 -- HISP DATA TYPES

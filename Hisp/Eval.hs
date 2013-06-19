@@ -75,7 +75,8 @@ local (Function _ _ _ (Exactly _ ah) _) es = do
           ((a,h), Function a h Nothing (AtLeast 0)
            (\es'' -> e $ List (es' ++ es'')))
       toF (Symbol a _) s@(Symbol _ h') =
-          ((a,h'), Function a h' Nothing noArgs (none s))  -- none s? Evil?
+          ((a,h'), Function a h' Nothing (AtLeast 0) (none s))
+--                   (\es' -> e $ List (s : es')))  -- Infinite recursion...
   modify (ns :)
 
 -- | Needs to be called after `local`.

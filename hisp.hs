@@ -1,4 +1,5 @@
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 {- HISP
 
@@ -13,7 +14,6 @@ It has:
 
 * recursion
 * lambdas
-* partial application
 
 It doesn't have:
 
@@ -25,13 +25,13 @@ It doesn't have:
 It wants:
 
 * sharing <- need this badly
-* aliasing
 * `let`
 
 -}
 
 import Hisp.Eval
 import Hisp.Base
+import Hisp.Flags
 import Hisp.Utils
 import Hisp.Types
 import Hisp.Scope
@@ -46,16 +46,34 @@ import qualified Data.Map as M
 
 ---
 
+type StateIO s = StateT s IO
+
 main :: IO ()
 main = do
-  files <- getArgs
-  scope <- load initialState files
-  putStrLn "Welcome to the Hisp REPL. Type `h` for help."
-  void $ runStateT run scope
+  args <- getArgs
+  case parseFlags args of
+    ([],[])      -> void $ runStateT repl initialState
+    ([],inp)     -> run initialState inp
+    ([Load],inp) -> void (load initialState inp >>= runStateT repl)
+    ([Exec],inp) -> void (runStateT (rep $ concat inp) initialState)
 
 -- | The bottom Scope is for lambdas. The next is for global functions.
 initialState :: [Scope]
 initialState = [builtins,M.empty]
+
+-- | Only run one file.
+run :: [Scope] -> [FilePath] -> IO ()
+run _ []     = return ()
+run ss (f:_) = do
+  contents <- readFile f
+  case parseExp ss contents of
+    Left err       -> putStrLn $ "Parsing Error:\n" ++ show err
+    Right (es,ss') -> do
+      let es' = filter isList es
+      forM_ es' (\ex -> eval (e ex) ss' >>=
+                        \case
+                          (Left err,_) -> putStrLn $ errMsg err
+                          (Right v,_)  -> print v)
 
 -- | For now this will just load, and not execute any function calls.
 load :: [Scope] -> [FilePath] -> IO [Scope]
@@ -71,22 +89,28 @@ load ss fs = do
       return ss'
     where load' f = putStrLn ("Loading " ++ f ++ "...") >> readFile f
 
-run :: StateT [Scope] IO ()
-run = forever $ do
-  putStr' "> "
-  input <- liftIO $ runMaybeT (getLine' >>= nest [])
-  case input of
-    Nothing  -> putStrLn' ">>> Too many right parentheses."
-    Just []  -> return ()
-    Just "h" -> help
-    Just cs  -> get >>= \ss -> do
-      let result = eval (parse cs >>= e) ss
-      output <- case result of
-                  (Left err, _)  -> return $ errMsg err
-                  (Right v, ss') -> put ss' >> inject v >> return (show v)
-      putStrLn' $ ">>> " ++ output
+repl :: StateIO [Scope] ()
+repl = do
+  liftIO (putStrLn "Welcome to the Hisp REPL. Type `h` for help.")
+  forever $ do
+    putStr' "> "
+    input <- liftIO $ runMaybeT (getLine' >>= nest [])
+    case input of
+      Nothing  -> putStrLn' ">>> Too many right parentheses."
+      Just []  -> return ()
+      Just "h" -> help
+      Just cs  -> rep cs
 
-help :: StateT [Scope] IO ()
+rep :: String -> StateIO [Scope] ()
+rep cs = get >>= \ss -> do
+--let result = eval (parse cs >>= e) ss
+  result <- liftIO $ eval (parse cs >>= e) ss
+  output <- case result of
+              (Left err, _)  -> return $ errMsg err
+              (Right v, ss') -> put ss' >> inject v >> return (show v)
+  putStrLn' $ ">>> " ++ output
+
+help :: StateIO [Scope] ()
 help = global >>= \bs -> liftIO $ do
   let names = M.foldr (\f acc -> funcName f : acc) [] bs
   mapM_ putStrLn [ "Hisp REPL Help"

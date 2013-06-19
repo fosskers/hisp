@@ -1,0 +1,6 @@
+(define assert (prep) (if (= True (prep))
+	       	      	  "Okay!"
+			  "Failed."))
+
+"Testing (= 1 1)..."
+(assert (= 1 1))
