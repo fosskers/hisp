@@ -17,8 +17,8 @@ import Hisp.Types
 
 type HispParser = Parsec String [Scope]
 
-parseExp :: [Scope] -> String -> Either ParseError ([Exp],[Scope])
-parseExp ss = runParser ((,) <$> hisp <*> getState) ss "(s-exp)"
+parseExp :: FilePath -> [Scope] -> String -> Either ParseError ([Exp],[Scope])
+parseExp f ss = runParser ((,) <$> hisp <*> getState) ss f
 
 hisp :: HispParser [Exp]
 hisp = spaces *> many1 atom

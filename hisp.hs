@@ -78,11 +78,12 @@ run (f:_) = do
                                    (Right v,_)  -> print v)
 
 -- | For now this will just load, and not execute any function calls.
+-- CONVERT THIS TO PARSEFILE.
 load :: [Scope] -> [FilePath] -> IO [Scope]
 load ss [] = return ss
 load ss fs = do
   contents <- concat `fmap` mapM load' fs
-  case parseExp ss contents of
+  case parseExp "" ss contents of
     Left err      -> putStrLn ("Parsing Error:\n" ++ show err) >> return ss
     Right (_,ss') -> do
       let news = M.size (head ss') - M.size (head ss)
@@ -119,7 +120,7 @@ parseFile' :: [FilePath] -> [FilePath] -> [Exp] -> StateIO [Scope] [Exp]
 parseFile' [] _ es        = return es
 parseFile' (f:fs) done es = get >>= \ss -> do
   contents <- liftIO $ readFile f
-  case parseExp ss contents of
+  case parseExp f ss contents of
     Left err -> liftIO (putStrLn ("Parsing Error:\n" ++ show err)) >> return []
     Right (es',ss') -> do
       let imports = filter (`notElem` done) . map reqPath . filter isRequire $ es'
@@ -143,7 +144,7 @@ help = global >>= \bs -> liftIO $ do
                  , "4. Feel free to write expressions over multiple lines." ]
 
 parse :: String -> Evaluate Exp
-parse s = get >>= \ss -> case parseExp ss s of
+parse s = get >>= \ss -> case parseExp "" ss s of
                            Left err -> failure $ "Syntax Error\n" ++ show err
                            Right (ex,ss') -> put ss' >> return (head ex)
 

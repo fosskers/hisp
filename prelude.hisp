@@ -14,15 +14,17 @@
                         ((a))
                         (: (a) (range (+ 1 (a)) (b)))))
 
-(define null (l) (= 0 (len (l))))
+(define null? (l) (= 0 (len (l))))
 
-(define map (f l) (if (null (l))
+(define single? (l) (= 1 (len (l))))
+
+(define map (f l) (if (null? (l))
                       ()
                       (: ((f) (head (l)))
-                         (map (f) (tail (l))))))
+                         (map f (tail (l))))))
 
 (define filter (p l)
-   (if (null (l))
+   (if (null? (l))
        ()
        (if ((p) (head (l)))
            (: (head (l)) (filter (p) (tail (l))))

@@ -64,8 +64,9 @@ listFunctions =
     (\(f:es:_) -> is sym f >> is lst es >> filterH f es) ]
 
 otherFunctions :: [Function]
-otherFunctions = []
---  [ Function "show" 901 Nothing (Exactly 1 []) (\(x:_) -> return (Val . S $ show x)) ]
+otherFunctions =
+  [ Function "show" 901 Nothing (Exactly 1 [])
+    (\(x:_) -> return $ List $ map (Val . C) (show x)) ]
 
 ifBlock :: [Exp] -> Evaluate Exp
 ifBlock (p:a:b:_) = e p >>= is bool >>= \p' -> if p' then e a else e b
