@@ -14,6 +14,8 @@ It has:
 
 * recursion
 * lambdas
+* few special forms
+* a simple module system
 
 It doesn't have:
 
@@ -51,29 +53,29 @@ type StateIO s = StateT s IO
 main :: IO ()
 main = do
   args <- getArgs
-  case parseFlags args of
-    ([],[])      -> void $ runStateT repl initialState
-    ([],inp)     -> run initialState inp
-    ([Load],inp) -> void (load initialState inp >>= runStateT repl)
-    ([Exec],inp) -> void (runStateT (rep $ concat inp) initialState)
+  void $ case parseFlags args of
+    ([],[])      -> runStateT repl initialState
+    ([],inp)     -> runStateT (run inp) initialState
+    ([Load],inp) -> load initialState inp >>= runStateT repl
+    ([Exec],inp) -> runStateT (rep $ concat inp) initialState
 
 -- | The bottom Scope is for lambdas. The next is for global functions.
 initialState :: [Scope]
 initialState = [builtins,M.empty]
 
 -- | Only run one file.
-run :: [Scope] -> [FilePath] -> IO ()
-run _ []     = return ()
-run ss (f:_) = do
-  contents <- readFile f
-  case parseExp ss contents of
-    Left err       -> putStrLn $ "Parsing Error:\n" ++ show err
-    Right (es,ss') -> do
+run :: [FilePath] -> StateIO [Scope] ()
+run []     = return ()
+run (f:_) = do
+  es <- parseFile f
+  case es of
+    [] -> return ()
+    _  -> get >>= \ss -> do
       let es' = filter isList es
-      forM_ es' (\ex -> eval (e ex) ss' >>=
-                        \case
-                          (Left err,_) -> putStrLn $ errMsg err
-                          (Right v,_)  -> print v)
+      liftIO $ forM_ es' (\ex -> eval (e ex) ss >>=
+                                 \case
+                                   (Left err,_) -> putStrLn $ errMsg err
+                                   (Right v,_)  -> print v)
 
 -- | For now this will just load, and not execute any function calls.
 load :: [Scope] -> [FilePath] -> IO [Scope]
@@ -110,6 +112,19 @@ rep cs = get >>= \ss -> do
               (Right v, ss') -> put ss' >> inject v >> return (show v)
   putStrLn' $ ">>> " ++ output
 
+parseFile :: FilePath -> StateIO [Scope] [Exp]
+parseFile f = parseFile' [f] [] []
+
+parseFile' :: [FilePath] -> [FilePath] -> [Exp] -> StateIO [Scope] [Exp]
+parseFile' [] _ es        = return es
+parseFile' (f:fs) done es = get >>= \ss -> do
+  contents <- liftIO $ readFile f
+  case parseExp ss contents of
+    Left err -> liftIO (putStrLn ("Parsing Error:\n" ++ show err)) >> return []
+    Right (es',ss') -> do
+      let imports = filter (`notElem` done) . map reqPath . filter isRequire $ es'
+      put ss' >> parseFile' (imports ++ fs) (f : done) (es' ++ es)
+
 help :: StateIO [Scope] ()
 help = global >>= \bs -> liftIO $ do
   let names = M.foldr (\f acc -> funcName f : acc) [] bs
@@ -124,7 +139,6 @@ help = global >>= \bs -> liftIO $ do
                  , "3. You can pass functions and also partially apply them:"
                  , "     (define $ (f a) (f a))"
                  , "     ($ sin 1)"
-                 , "     ($ (+ 1) 1)"
                  , "     ($ (lambda (a) (+ 1 a)) 1)"
                  , "4. Feel free to write expressions over multiple lines." ]
 

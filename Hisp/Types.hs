@@ -62,9 +62,9 @@ data Function = Function { funcName :: String
                          , apply    :: [Exp] -> Evaluate Exp }
 
 instance Show Function where
-    show f = "(lambda [" ++ as ++ "] (" ++ funcName f ++ as' ++ "))"
+    show f = funcName f ++ " (" ++ as' ++ ")"
         where as  = argString $ funcArgs f
-              as' = if null as then "" else " " ++ as
+              as' = if null as then "" else as
 
 argString :: Args -> String
 argString (Exactly i _) = intersperse ' ' (take i ['a'..'z'])
@@ -82,12 +82,14 @@ necArgs (AtLeast i)   = "at least " ++ show i
 ----------------
 data Exp = Val Value
          | Symbol String Hash
+         | Require { reqPath :: FilePath }
          | List { expList :: [Exp] }
            deriving (Eq,Ord)
 
 instance Show Exp where
     show (Val v)      = show v
     show (Symbol n _) = n -- ++ " @ " ++ show h
+    show (Require fp) = "require -> " ++ fp
     show l@(List es) | null es    = "()"
                      | isString l = foldr (\(Val (C c)) s -> c : s) "" es
                      | otherwise  = "(" ++ unwords (map show es) ++ ")"
@@ -97,6 +99,7 @@ typeName (Val (N _))  = "Number"
 typeName (Val (B _))  = "Boolean"
 typeName (Val (C _))  = "Char"
 typeName (Symbol _ _) = "Symbol"
+typeName (Require _)  = "Require"
 typeName (List _)     = "List"
 
 lst :: Exp -> Either String [Exp]
@@ -122,6 +125,10 @@ isChar _           = False
 isList :: Exp -> Bool
 isList (List _) = True
 isList _        = False
+
+isRequire :: Exp -> Bool
+isRequire (Require _) = True
+isRequire _           = False
 
 ------------------
 -- HISP DATA TYPES

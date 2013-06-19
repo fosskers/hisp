@@ -58,7 +58,7 @@ chars :: HispParser Exp
 chars = char '"' *> (List . map (Val . C) <$> many (noneOf "\n\"")) <* char '"'
 
 sexp :: HispParser Exp
-sexp = char '(' *> spaces *> (function <|> list) <* char ')'
+sexp = char '(' *> spaces *> (function <|> require <|> list) <* char ')'
 
 function :: HispParser Exp
 function = try (define <|> lambda)
@@ -95,3 +95,6 @@ lambda = do
               (Exactly (length ps') ps') (const $ e body)
   modifyState $ newLambda func
   return $ Symbol name hash'
+
+require :: HispParser Exp
+require = try $ string "require" >> spaces >> (Require . show) `fmap` chars

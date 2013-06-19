@@ -1,6 +1,31 @@
+(require "fib.hisp")
+(require "prelude.hisp")
+
 (define assert (prep) (if (= True (prep))
 	       	      	  "Okay!"
 			  "Failed."))
 
 "Testing (= 1 1)..."
 (assert (= 1 1))
+
+"Testing (= 55 (fib 10))..."
+(assert (= 55 (fib 10)))
+
+"Testing (= 2 ((lambda (z) (+ 1 (z))) 1))..."
+(assert (= 2 ((lambda (z) (+ 1 (z))) 1)))
+
+"Testing (= (2 3 4) (map (lambda (z) (+ 1 (z))) (1 2 3)))..."
+(assert (= (2 3 4) (map (lambda (z) (+ 1 (z))) (1 2 3))))
+
+"***Testing List Functions***"
+"Testing (= () ())..."
+(assert (= () ()))
+
+"Testing (= () (tail (1)))..."
+(assert (= () (tail (1))))
+
+"Testing (= (1 2 3) (: 1 (tail (1 2 3))))..."
+(assert (= (1 2 3) (: 1 (tail (1 2 3)))))
+
+"Testing (= (1 2 3) (: 1 (: 2 (: 3 ()))))..."
+(assert (= (1 2 3) (: 1 (: 2 (: 3 ())))))
