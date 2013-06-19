@@ -29,6 +29,7 @@ e (List (x:es))  = e x >>= \x' ->
     Symbol n h -> do
       f   <- get >>= function n h
       f'  <- argCheck f es >> local f es >> bindParamCalls f
+--      liftIO $ putStrLn $ "Applying: " ++ n ++ " @ " ++ show h
       apply f' es <* popScope
     _ -> (List . (x' :)) `fmap` mapM e es
 e l@(List []) = return l

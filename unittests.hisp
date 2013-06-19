@@ -50,3 +50,17 @@
 
 "Testing (= (1 2 3 4 5) (range 1 5))..."
 (assertEq (1 2 3 4 5) (range 1 5))
+
+"Testing (= 0 (sum ()))..."
+(assertEq 0 (sum ()))
+
+"Testing (= 15 (sum (1 2 3 4 5)))..."
+(assertEq 15 (sum (1 2 3 4 5)))
+
+"Testing foo..."
+(define foo 1)
+(assertEq 1 (foo))
+
+"Testing bar..."
+(define bar () (+ 1 1))
+(assertEq 2 (bar))

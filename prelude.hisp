@@ -1,3 +1,9 @@
+; Hisp Prelude
+
+(define sum (ns) (if (null? (ns))
+                     0
+                     (+ (head (ns)) (sum (tail (ns))))))
+
 (define square (n) (^ (n) 2))
 
 (define cube (n) (^ (n) 3))
@@ -5,6 +11,8 @@
 (define pos? (n) (> (n) 0))
 
 (define neg? (n) (< (n) 0))
+
+(define zero? (n) (= 0 (n)))
 
 (define id (n) (n))
 

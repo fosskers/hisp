@@ -1,0 +1,12 @@
+; Find the sum of all the multiples of 3 or 5 below 1000.
+; Works, but is very slow.
+
+(require "../prelude.hisp")
+
+; Need an `or` here!
+(define solve (n) (cond (>= (n) 10) 0
+                        (zero? (mod (n) 3)) (+ (n) (solve (+ 1 (n))))
+                        (zero? (mod (n) 5)) (+ (n) (solve (+ 1 (n))))
+                        (else) (solve (+ 1 (n)))))
+
+(solve 3)
