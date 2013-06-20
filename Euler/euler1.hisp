@@ -1,22 +1,28 @@
 ; Find the sum of all the multiples of 3 or 5 below 1000.
+
 ; Works, but is very slow.
 ; Diagnosed the problem. Because Sharing isn't implemented, every call
 ; to any local symbol recalculates it all the way down. 
 ; Calling just `(sum (rangeH 0 10))` ends up calling `rangeH` 5 times!
 
-(require "../prelude.hisp")
+; Speed problem SOLVED! I implemented Sharing, so those calls don't repeat
+; calculations!
+
+; SOLUTION: 233168
+
+; (require "../prelude.hisp")
 
 ; Need an `or` here!
-(define solve (n) (cond (>= (n) 100) 0
+(define solve (n) (cond (>= (n) 1000) 0
                         (zero? (mod (n) 3)) (+ (n) (solve (+ 1 (n))))
                         (zero? (mod (n) 5)) (+ (n) (solve (+ 1 (n))))
                         (else) (solve (+ 1 (n)))))
 
-; Faster, but only with `rangeH` and not `range`.
+; Goes faster with `rangeH`.
 (define solve2 (n) (sum (filterH (lambda (z) (cond (zero? (mod (z) 3)) True
                                                    (zero? (mod (z) 5)) True
                                                    (else) False))
                                  (rangeH 3 (- (n) 1)))))
 
 ;(solve  3)
-(solve2 100)
+;(solve2 1000)

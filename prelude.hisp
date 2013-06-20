@@ -30,7 +30,7 @@
 (define map (f l) (if (null? (l))
                       ()
                       (: ((f) (head (l)))
-                         (map f (tail (l))))))
+                         (map (f) (tail (l))))))
 
 (define filter (p l)
    (if (null? (l))

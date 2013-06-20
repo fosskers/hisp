@@ -11,8 +11,7 @@ import Prelude hiding (lookup)
 
 import Control.Monad.State.Lazy
 
-import Data.Map.Lazy       (fromList, empty)
-import Control.Applicative ((<*))
+import Data.Map.Lazy       (fromList, empty, lookup, insert)
 import Data.Hashable       (hash)
 
 import Hisp.Types
@@ -31,7 +30,9 @@ e (List (x:es))  = e x >>= \x' ->
       f'  <- argCheck f es >> local f es >> bindParamCalls f
 --      depth <- length `fmap` get
 --      liftIO $ putStrLn $ replicate depth '-' ++ " " ++ n ++ " @ " ++ show h
-      apply f' es <* popScope
+      result <- apply f' es
+      when (null es) $ share result (n,h)  -- Share the result to other scopes!!
+      popScope >> return result
     _ -> (List . (x' :)) `fmap` mapM e es
 e l@(List []) = return l
 
@@ -92,11 +93,23 @@ bindParamCalls (Function n h (Just b) as _) = head `fmap` get >>= \ls -> do
   return $ Function n h (Just b') as (const $ e b')
 
 -- BUG: This doesn't seem to be working.
+-- June 20: Really?
 connect :: Scope -> Exp -> Exp
 connect _ v@(Val _) = v
 connect s (List es) = List $ map (connect s) es
 connect s (Symbol n h) = Symbol n h'
     where h' = case hashFromName n s of Nothing -> h; Just h'' -> h''
+
+share :: Exp -> Address -> Evaluate ()
+share ex a = modify $ share' ex a
+
+share' :: Exp -> Address -> [Scope] -> [Scope]
+share' _ _ [ ]           = []
+share' ex a@(n,h) (s:ss) =
+  case lookup a s of
+    Nothing -> s : share' ex a ss
+    Just _  -> insert a new s : ss
+        where new = Function n h Nothing (AtLeast 0) (none ex)
 
 numOkay :: Args -> Int -> Bool
 numOkay (Exactly i _) n = n == i
