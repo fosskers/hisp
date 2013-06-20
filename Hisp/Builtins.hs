@@ -93,7 +93,7 @@ car (List []) = failure "Empty list."
 car l         = evalList (return . head) l
 
 cdr :: Exp -> Evaluate Exp
---cdr (List (_:es)) = e $ List es
+cdr l@(List ((Symbol _ _):_)) = evalList (return . List . tail) l
 cdr (List (_:es)) = return $ List es
 cdr _ = failure "Empty list."
 
