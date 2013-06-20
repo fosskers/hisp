@@ -8,6 +8,13 @@
 
 (define cube (n) (^ (n) 3))
 
+; What about `0`?
+(define even? (n) (zero? (mod (n) 2)))
+
+(define odd? (n) (not (even? (n))))
+
+(define not (p) (if (p) False True))
+
 (define pos? (n) (> (n) 0))
 
 (define neg? (n) (< (n) 0))
