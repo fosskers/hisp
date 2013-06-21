@@ -14,22 +14,6 @@
 
 (define odd? (n) (not (even? (n))))
 
-(define and? (l)
-        (foldl (lambda (acc z)
-                       (if (not (acc))
-                           False
-                           (z)))
-               True
-               (l)))
-
-(define or? (l)
-        (foldl (lambda (acc z)
-                       (if (acc)
-                           (acc)
-                           (z)))
-               False
-               (l)))
-
 (define pos? (n) (> (n) 0))
 
 (define neg? (n) (< (n) 0))
@@ -103,3 +87,11 @@
 (define id (n) (n))
 
 (define $ (f a) ((f) (a)))
+
+(define and? (l) (cond (null? (l)) True
+                       (not (head (l))) False
+                       (else) (and? (tail (l)))))
+
+(define or? (l) (cond (null? (l)) False
+                      (head (l)) True
+                      (else) (or? (tail (l)))))
