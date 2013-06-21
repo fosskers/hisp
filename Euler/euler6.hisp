@@ -1,0 +1,7 @@
+; SOLUTION: 25164150
+
+(require "../prelude.hisp")
+
+; I want `let`!
+(define euler6 () (- (square (sum (range 1 100)))
+                     (sum (map square (range 1 100)))))
