@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Hisp.Eval
     ( e
     , one
@@ -21,8 +23,10 @@ import Hisp.Scope
 
 -- | The Evaluation Function
 e :: Exp -> Evaluate Exp
+e Comment        = failure "Attempted to evaluate a Comment."
 e v@(Val _)      = return v
 e s@(Symbol _ _) = return s
+e (Require _)    = failure "Attempted to evaluate a Require form."
 e (List (x:es))  = e x >>= \x' ->
   case x' of
     Symbol n h -> do
@@ -70,16 +74,16 @@ local (Function _ _ _ (AtLeast _) _) _     = modify (empty :)
 local (Function _ _ _ (Exactly _ ah) _) es = do
   depth <- length `fmap` get
   let ns = fromList $ zipWith toF ah es
-      toF (Symbol a _) v@(Val v') =
-          let h = hash v' in
+      toF (Symbol a _) v@(Val v') = let h = hash v' in
           ((a,h), Function a h Nothing noArgs (none v))
-      toF (Symbol a _) (List es') =
-          let h = hash $ show es' ++ show depth in
+      toF (Symbol a _) (List es') = let h = hash $ show es' ++ show depth in
           ((a,h), Function a h Nothing (AtLeast 0)
            (\es'' -> e $ List (es' ++ es'')))
-      toF (Symbol a _) s@(Symbol _ h') =
-          ((a,h'), Function a h' Nothing (AtLeast 0) (none s))
---                   (\es' -> e $ List (s : es')))  -- Infinite recursion...
+      toF (Symbol a _) s@(Symbol _ h') = let h'' = hash h' in
+          ((a,h''), Function a h'' Nothing (AtLeast 0) -- (none s))
+                   (\case
+                       [] -> return s
+                       xs -> e $ List (s : xs)))
   modify (ns :)
 
 -- | Needs to be called after `local`.

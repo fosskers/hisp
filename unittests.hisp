@@ -30,6 +30,15 @@
           (mapH (lambda (z) (+ 1 (z))) (1 2 3))
           "(mapH (lambda (z) (+ 1 (z))) (1 2 3))")
 
+
+(assertEq (1 2 6)
+          (map ! (1 2 3))
+          "(map ! (1 2 3))")
+
+(assertEq (1 2 6)
+          (mapH ! (1 2 3))
+          "(mapH ! (1 2 3))")
+
 (assertEq (6 7 8)
           (filter (lambda (z) (> (z) 5)) (1 2 3 4 5 6 7 8))
           "(filter (lambda (z) (> (z) 5)) (1 2 3 4 5 6 7 8))")
@@ -54,6 +63,10 @@
 (assertEq 0 (sum ()) "(sum ())")
 
 (assertEq 15 (sum (1 2 3 4 5)) "(sum (1 2 3 4 5))")
+
+(assertEq 15
+         (foldl (lambda (acc z) (+ (acc) (z))) 0 (1 2 3 4 5))
+         "(foldl (lambda (acc z) (+ (acc) (z))) 0 (1 2 3 4 5))")
 
 (define foo 1)
 (assertEq 1 (foo) "(foo)")
