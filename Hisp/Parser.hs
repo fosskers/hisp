@@ -89,7 +89,7 @@ functionBody = (,) <$> (option (List []) sexp <* spaces) <*> atom
 
 lambda :: HispParser Exp
 lambda = do
-  string "lambda" >> spaces
+  (string "lambda" <|> string "λ") >> spaces
   (ps,body) <- functionBody
   let ps' = expList ps
       name  = "lambda"
