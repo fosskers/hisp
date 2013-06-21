@@ -7,7 +7,8 @@ module Hisp.Eval
     , three
     , none
     , foldE
-    , foldE1 ) where
+    , foldE1
+    , function ) where
 
 import Prelude hiding (lookup)
 
@@ -24,7 +25,7 @@ import Hisp.Scope
 -- | The Evaluation Function
 e :: Exp -> Evaluate Exp
 e Comment        = failure "Attempted to evaluate a Comment."
-e v@(Val _)      = return v
+e v@(Val _)      = return v  --liftIO (putStrLn $ "RETURNING: " ++ show v) >> return v
 e s@(Symbol _ _) = return s
 e (Require _)    = failure "Attempted to evaluate a Require form."
 e (List (x:es))  = e x >>= \x' ->

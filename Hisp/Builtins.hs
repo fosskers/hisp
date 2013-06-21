@@ -1,12 +1,13 @@
 module Hisp.Builtins where
 
+import Control.Monad.State.Lazy (get)
 import Control.Applicative ((<$>), (<*>))
-import Control.Monad (filterM)
-import Data.Map (fromList)
+import Control.Monad       (filterM, foldM)
+import Data.Map            (fromList)
 
 import Hisp.Eval
 import Hisp.Types
-import Hisp.Utils (tau,twinZip)
+import Hisp.Utils (tau, twinZip)
 
 ---
 
@@ -60,7 +61,8 @@ listFunctions =
   , Function "mapH" 207 Nothing (Exactly 2 [])
     (\(f:es:_) -> is sym f >> is lst es >> mapH f es)
   , Function "filterH" 208 Nothing (Exactly 2 [])
-    (\(f:es:_) -> is sym f >> is lst es >> filterH f es) ]
+    (\(f:es:_) -> is sym f >> is lst es >> filterH f es)
+  , Function "foldlH" 209 Nothing (Exactly 3 []) (\(s:z:l:_) -> foldlH s z l) ]
 
 otherFunctions :: [Function]
 otherFunctions =
@@ -124,6 +126,13 @@ filterH s l = evalList (\es -> List `fmap` filterM f es) l
               Right True  -> return True
               Right False -> return False
               Left _ -> failure "Function application did not yield a Boolean."
+
+foldlH :: Exp -> Exp -> Exp -> Evaluate Exp
+foldlH s z l = do
+  (Symbol n h) <- e s >>= is sym
+  l' <- evalList return l
+  f  <- get >>= function n h
+  foldM (\acc x -> apply f [acc,x]) z l'
 
 apply' :: Exp -> [Exp] -> Evaluate Exp
 apply' f es = (List . (f :)) `fmap` mapM e es >>= e

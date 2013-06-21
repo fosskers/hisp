@@ -1,0 +1,15 @@
+(define fib (a) (cond (= (a) 0) 0
+	    	      (= (a) 1) 1
+		      (else) (+ (fib (- (a) 1))
+		      	     	(fib (- (a) 2)))))
+
+; Makes a list of fibs below a certain number.
+(define fast-fibs (lim) (fast-fibs' (lim) 0 1))
+
+(define fast-fibs' (lim a b)
+        (if (>= (a) (lim))
+            ()
+            (: (a)
+               (fast-fibs' (lim)
+                           (b)
+                           (+ (a) (b))))))

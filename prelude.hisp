@@ -1,9 +1,9 @@
 ; Hisp Prelude
 
 ;; MATH
-(define sum (ns) (if (null? (ns))
-                     0
-                     (+ (head (ns)) (sum (tail (ns))))))
+(define sum (ns) (foldlH + 0 (ns)))
+
+(define product (ns) (foldlH * 1 (ns)))
 
 (define square (n) (^ (n) 2))
 
