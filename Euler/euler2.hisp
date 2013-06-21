@@ -3,6 +3,6 @@
 (require "../prelude.hisp")
 (require "../fib.hisp")
 
-(define solve () (sum (filterH (lambda (n) (even? (n))) (fast-fibs 4000000))))
+(define solve () (sum (filter (lambda (n) (even? (n))) (fast-fibs 4000000))))
 
 (solve)

@@ -42,6 +42,7 @@
            (: (head (l)) (filter (p) (tail (l))))
            (filter (p) (tail (l))))))
 
+; Iterative, so better? Tail-recursable?
 (define foldl (f z l)
         (if (null? (l))
             (z)
@@ -49,7 +50,19 @@
                    ((f) (z) (head (l)))
                    (tail (l)))))
 
+(define foldr (f z l)
+        (if (null? (l))
+            (z)
+            ((f) (head (l))
+                 (foldr (f)
+                        (z)
+                        (tail (l))))))
+
 ;; OTHER
+; Function Composition
+; Doesn't seem like lexical closures work...
+(define . (f g) (lambda (a) ((f) ((g) (a)))))
+
 (define not (p) (if (p) False True))
 
 (define id (n) (n))

@@ -20,7 +20,15 @@
 
 (assertEq 55 (fib 10) "(fib 10)")
 
+"**************************************"
+"*** Testing Higher-Order Functions ***"
+"**************************************"
 (assertEq 2 ((lambda (z) (+ 1 (z))) 1) "((lambda (z) (+ 1 (z))) 1)")
+
+(assertEq 2 (((lambda () (lambda (z) (+ 1 (z))))) 1)
+            "(((lambda () (lambda (z) (+ 1 (z))))) 1)")
+
+(assertEq 6 (((lambda () !)) 3) "(((lambda () !)) 3)")
 
 (assertEq (2 3 4)
           (map (lambda (z) (+ 1 (z))) (1 2 3))
@@ -29,7 +37,6 @@
 (assertEq (2 3 4)
           (mapH (lambda (z) (+ 1 (z))) (1 2 3))
           "(mapH (lambda (z) (+ 1 (z))) (1 2 3))")
-
 
 (assertEq (1 2 6)
           (map ! (1 2 3))
@@ -47,7 +54,9 @@
           (filterH (lambda (z) (> (z) 5)) (1 2 3 4 5 6 7 8))
           "(filterH (lambda (z) (> (z) 5)) (1 2 3 4 5 6 7 8))")
 
-"***Testing List Functions***"
+"******************************"
+"*** Testing List Functions ***"
+"******************************"
 (assertEq () () "()")
 
 (assertEq () (tail (1)) "(tail (1))")
@@ -68,11 +77,17 @@
          (foldl (lambda (acc z) (+ (acc) (z))) 0 (1 2 3 4 5))
          "(foldl (lambda (acc z) (+ (acc) (z))) 0 (1 2 3 4 5))")
 
+(assertEq 15
+          (foldr (lambda (z acc) (+ (acc) (z))) 0 (1 2 3 4 5))
+          "(foldr (lambda (z acc) (+ (acc) (z))) 0 (1 2 3 4 5))"))
+
 (define foo 1)
 (assertEq 1 (foo) "(foo)")
 
 (define bar () (+ 1 1))
 (assertEq 2 (bar) "(bar)")
 
-"***Testing Project Euler Solutions***"
+"***************************************"
+"*** Testing Project Euler Solutions ***"
+"***************************************"
 (assertEq 233168 (solve2 1000) "Problem #1")
