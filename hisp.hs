@@ -40,6 +40,7 @@ import Hisp.Scope
 import Hisp.Parser
 import Hisp.Builtins
 
+import System.FilePath    (takeFileName)
 import System.Environment (getArgs)
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Maybe
@@ -121,7 +122,7 @@ parseFile' (f:fs) done es = get >>= \ss -> do
   case parseExp f ss contents of
     Left err -> liftIO (putStrLn ("Parsing Error:\n" ++ show err)) >> return []
     Right (es',ss') -> do
-      let imports = filter (`notElem` done) . map reqPath . filter isRequire $ es'
+      let imports = filter (flip notElem done . takeFileName) . map reqPath . filter isRequire $ es'
       put ss' >> parseFile' (imports ++ fs) (f : done) (es' ++ es)
 
 help :: StateIO [Scope] ()

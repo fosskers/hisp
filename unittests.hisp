@@ -1,6 +1,7 @@
 (require "fib.hisp")
 (require "prelude.hisp")
 (require "./Euler/euler1.hisp")
+(require "./Euler/euler2.hisp")
 
 ; Unit tests for Hisp.
 
@@ -79,7 +80,7 @@
 
 (assertEq 15
           (foldr (lambda (z acc) (+ (acc) (z))) 0 (1 2 3 4 5))
-          "(foldr (lambda (z acc) (+ (acc) (z))) 0 (1 2 3 4 5))"))
+          "(foldr (lambda (z acc) (+ (acc) (z))) 0 (1 2 3 4 5))")
 
 (define foo 1)
 (assertEq 1 (foo) "(foo)")
@@ -90,4 +91,5 @@
 "***************************************"
 "*** Testing Project Euler Solutions ***"
 "***************************************"
-(assertEq 233168 (solve2 1000) "Problem #1")
+(assertEq 233168 (euler1 1000) "Problem #1")
+(assertEq 4613732 (euler2) "Problem #2")

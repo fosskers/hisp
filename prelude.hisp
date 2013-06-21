@@ -14,17 +14,52 @@
 
 (define odd? (n) (not (even? (n))))
 
+(define and? (l)
+        (foldl (lambda (acc z)
+                       (if (not (acc))
+                           False
+                           (z)))
+               True
+               (l)))
+
+(define or? (l)
+        (foldl (lambda (acc z)
+                       (if (acc)
+                           (acc)
+                           (z)))
+               False
+               (l)))
+
 (define pos? (n) (> (n) 0))
 
 (define neg? (n) (< (n) 0))
 
 (define zero? (n) (= 0 (n)))
 
+(define divides? (a b) (= 0 (mod (a) (b))))
+
+(define prime? (n)
+        (cond (< (n) 2) False
+              (= (n) 2) True
+              (else)    (prime-work (n) (: 2 (range-step 3 5 (+ 1 (sqrt (n))))))))
+
+(define prime-work (n divs)
+        (cond (null? (divs)) True
+              (divides? (n) (head (divs))) False
+              (else) (prime-work (n) (tail (divs)))))
+
 ;; LISTS
 ; `rangeH` is must faster.
 (define range (a b) (if (= (a) (b))
                         ((a))
                         (: (a) (range (+ 1 (a)) (b)))))
+
+(define range-step (a b c) (range-step' (a) (- (b) (a)) (c)))
+
+; Need closures...
+(define range-step' (a s c) (if (> (a) (c))
+                                ()
+                                (: (a) (range-step' (+ (s) (a)) (s) (c)))))
 
 (define null? (l) (= 0 (len (l))))
 

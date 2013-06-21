@@ -19,7 +19,7 @@
                         (else) (solve (+ 1 (n)))))
 
 ; Goes faster with `rangeH`.
-(define solve2 (n) (sum (filterH (lambda (z) (cond (zero? (mod (z) 3)) True
+(define euler1 (n) (sum (filterH (lambda (z) (cond (zero? (mod (z) 3)) True
                                                    (zero? (mod (z) 5)) True
                                                    (else) False))
                                  (rangeH 3 (- (n) 1)))))
