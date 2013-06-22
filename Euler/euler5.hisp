@@ -1,0 +1,25 @@
+; Project Euler Problem 5
+; SOLUTION: 232792560
+; Interesting. This solution actually satisfies up to 22.
+
+; Theory: (x1, x2, x3, .. xn) are primes and are factors of y.
+; (* x1 x2 x3 .. xn) is also a factor of y.
+
+; Holds for (2,3) (3,5) (5,7) (7,11) (11,13) (13,17) (17,19) (2,5) (2,3,5)
+
+(require "../prelude.hisp")
+
+;(filter (λ (n) (and? ((divides? (n) 2)
+;		      (divides? (n) 3)
+;		      (divides? (n) 5))))
+;	(rangeH 1 100))
+
+; Iterate by this amount. Allows us to only need to test 24 numbers.
+(define gap () (* 19 17 13 11 7 5 3 2))
+
+(define euler5 () (work (gap) (20 18 16 14 12)))
+
+(define work (n check)
+        (if (and? (map (λ (c) (divides? (n) (c))) (check)))
+	    (n)
+	    (work (+ (gap) (n)) (check))))

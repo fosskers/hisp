@@ -2,6 +2,7 @@
 (require "prelude.hisp")
 (require "./Euler/euler1.hisp")
 (require "./Euler/euler2.hisp")
+(require "./Euler/euler5.hisp")
 (require "./Euler/euler6.hisp")
 
 ; Unit tests for Hisp.
@@ -138,6 +139,7 @@
 "***************************************"
 "*** Testing Project Euler Solutions ***"
 "***************************************"
-(assertEq 233168 (euler1 1000) "Problem #1")
-(assertEq 4613732 (euler2) "Problem #2")
-(assertEq 25164150 (euler6) "Problem #6")
+(assertEq 233168    (euler1 1000) "Problem #1")
+(assertEq 4613732   (euler2) "Problem #2")
+(assertEq 232792560 (euler5) "Problem #5")
+(assertEq 25164150  (euler6) "Problem #6")
