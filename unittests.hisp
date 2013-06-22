@@ -22,6 +22,31 @@
 
 (assertEq 55 (fib 10) "(fib 10)")
 
+"**********************************"
+"*** Testing Control Structures ***"
+"**********************************"
+(define let-test1 () (let ((a 1)
+                           (b 2))
+		       (+ (a) (b))))
+(assertEq 3 (let-test1) "let block")
+
+(define let-test2 () (let ()
+		       5))
+(assertEq 5 (let-test2) "empty let block")
+
+(define let-test3 () (let ((p prime?))
+		       ((p) 3)))
+(assertEq True (let-test3) "function aliasing in let block")
+
+(define let-test4 () (let ((f (λ (z) (+ 1 (z)))))
+		       ((f) 1)))
+(assertEq 2 (let-test4) "lambda definitions in let block")
+
+(define let-test5 () (let ((a 5)
+			   (b (+ 1 (a))))
+		       (b)))
+(assertEq 6 (let-test5) "symbols in let blocks referring to each other")
+
 "**************************************"
 "*** Testing Higher-Order Functions ***"
 "**************************************"

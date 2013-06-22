@@ -14,6 +14,7 @@ It has:
 
 * recursion
 * lambdas
+* `let` blocks
 * few special forms
 * a simple module system
 
@@ -23,11 +24,6 @@ It doesn't have:
 * (real) IO
 * quoting
 * macros
-
-It wants:
-
-* sharing <- need this badly
-* `let`
 
 -}
 

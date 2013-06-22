@@ -8,6 +8,7 @@ module Hisp.Eval
     , none
     , foldE
     , foldE1
+    , local
     , function ) where
 
 import Prelude hiding (lookup)

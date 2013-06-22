@@ -20,8 +20,9 @@ controlFunctions :: [Function]
 controlFunctions =
   [ Function "if"     1 Nothing (Exactly 3 []) ifBlock
   , Function "cond"   2 Nothing (AtLeast 2)    (condBlock . twinZip)
-  , Function "else"   3 Nothing noArgs (none $ fromBool True)
-  , Function "apply"  4 Nothing (AtLeast 2)   (\(x:es) -> apply' x es) ]
+  , Function "else"   3 Nothing noArgs         (none $ fromBool True)
+  , Function "apply"  4 Nothing (AtLeast 2)    (\(x:es) -> apply' x es)
+  , Function "let"    5 Nothing (Exactly 2 []) (\(n:b:_) -> letBlock n b) ]
 
 mathFunctions :: [Function]
 mathFunctions =
@@ -69,6 +70,14 @@ otherFunctions =
   [ Function "show" 901 Nothing (Exactly 1 [])
     (\(x:_) -> return $ List $ map (Val . C) (show x)) ]
 
+type Evaluator a b = (Exp -> Either String Number) -> a -> b -> Evaluate Number
+
+evalNum :: Evaluator a b -> a -> b -> Evaluate Exp
+evalNum f g es = fromNum <$> f num g es
+
+---------------------
+-- Control Structures
+---------------------
 ifBlock :: [Exp] -> Evaluate Exp
 ifBlock (p:a:b:_) = e p >>= is bool >>= \p' -> if p' then e a else e b
 ifBlock _ = failure "Too many arguments to `if` block."
@@ -77,10 +86,18 @@ condBlock :: [(Exp,Exp)] -> Evaluate Exp
 condBlock ((p,a):es) = e p >>= is bool >>= \p' -> if p' then e a else condBlock es
 condBlock [] = failure "Non-terminating `cond` block given."
 
-type Evaluator a b = (Exp -> Either String Number) -> a -> b -> Evaluate Number
+letBlock :: Exp -> Exp -> Evaluate Exp
+letBlock names block = is lst names >>= loadNames >> e block
+    where groupNews ((List (s@(Symbol _ _):b:[])):ns) = ((s,b) :) `fmap` groupNews ns
+          groupNews [] = return []
+          groupNews _  = failure "Improper `let` block given."
 
-evalNum :: Evaluator a b -> a -> b -> Evaluate Exp
-evalNum f g es = fromNum <$> f num g es
+          loadNames es = do
+            ssbs <- groupNews es
+            let ss = map fst ssbs
+                bs = map snd ssbs
+                temp = Function "" noHash Nothing (Exactly 0 ss) undefined
+            local temp bs
 
 -----------------
 -- List functions
