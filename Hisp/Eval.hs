@@ -35,6 +35,7 @@ e (List (x:es))  = e x >>= \x' ->
       f   <- get >>= function n h
       f'  <- argCheck f es >> local f es >> bindParamCalls f
 --      depth <- length `fmap` get
+--      liftIO $ print depth
 --      liftIO $ putStrLn $ replicate depth '-' ++ " " ++ n ++ " @ " ++ show h
       result <- apply f' es
       when (null es) $ share result (n,h)  -- Share the result to other scopes!!

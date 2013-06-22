@@ -9,6 +9,14 @@
 
 (define cube (n) (^ (n) 3))
 
+(define max (ns) (foldl (λ (acc n) (if (> (acc) (n)) (acc) (n)))
+			(head (ns))
+			(tail (ns))))
+
+(define min (ns) (foldl (λ (acc n) (if (< (acc) (n)) (acc) (n)))
+			(head (ns))
+			(tail (ns))))
+
 ; What about `0`?
 (define even? (n) (zero? (mod (n) 2)))
 
@@ -17,6 +25,8 @@
 (define pos? (n) (> (n) 0))
 
 (define neg? (n) (< (n) 0))
+
+(define one? (n) (= 1 (n)))
 
 (define zero? (n) (= 0 (n)))
 
@@ -31,6 +41,29 @@
         (cond (null? (divs)) True
               (divides? (n) (head (divs))) False
               (else) (prime-work (n) (tail (divs)))))
+
+(define prime-factors (n) (if (prime? (n))
+			      ((n))
+			      (prime-factors-work (n) 2)))
+
+; Doesn't work?
+(define prime-factors-work (n divisor)
+        (cond (one? (n)) ()
+	      (divides? (n) (divisor)) (: (divisor)
+					  (let ((next (div (n) (divisor))))
+					    (if (prime? (next))
+						((next))
+						(prime-factors-work (div (n) (divisor))
+								    (divisor)))))
+	      (else) (prime-factors-work (n)
+					 (next-prime (divisor)))))
+
+(define next-prime (p) (if (even? (p))
+			   (next-prime (- (p) 1))
+			   (let ((next (+ 2 (p))))
+			     (if (prime? (next))
+				 (next)
+				 (next-prime (next))))))
 
 ;; LISTS
 ; `rangeH` is must faster.

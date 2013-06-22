@@ -1,4 +1,7 @@
 ; Project Euler Problem 5
+; What is the smallest positive number that is evenly divisible by all of
+; the numbers from 1 to 20?
+
 ; SOLUTION: 232792560
 ; Interesting. This solution actually satisfies up to 22.
 
@@ -8,11 +11,6 @@
 ; Holds for (2,3) (3,5) (5,7) (7,11) (11,13) (13,17) (17,19) (2,5) (2,3,5)
 
 (require "../prelude.hisp")
-
-;(filter (λ (n) (and? ((divides? (n) 2)
-;		      (divides? (n) 3)
-;		      (divides? (n) 5))))
-;	(rangeH 1 100))
 
 ; Iterate by this amount. Allows us to only need to test 24 numbers.
 (define gap () (* 19 17 13 11 7 5 3 2))
