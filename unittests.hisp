@@ -11,12 +11,16 @@
 	       	      	  "Okay!"
 			  "Failed."))
 
-(define assertEq (a b s) (concat "Testing "
-                                 (s)
-                                 (if (= (a) (b))
-                                     " ... Okay!"
-                                     (concat " ... Failed, giving: --> "
-                                             (apply show (b))))))
+(define assertEq (a b s) (let ((status (= (a) (b))))
+			   (concat "[ "
+				   (if (status) "PASS" "FAIL")
+				   " ] Testing "
+				   (s)
+				   (if (status)
+				       ""
+				       (concat " ... Failed with: --> "
+					       (apply show (b)))))))
+
 
 ;; TESTS
 (assertEq 1 1 "1")
@@ -108,6 +112,11 @@
 (assertEq (1 2 3 4 5)
           (foldr : () (1 2 3 4 5))
           "(foldr : () (1 2 3 4 5))")
+
+(define compose-test () (let ((f (. prime? ! inc dec inc)))
+			  ((f) 2)))
+
+(assertEq False (compose-test) "function composition")
 
 "******************************"
 "*** Testing List Functions ***"

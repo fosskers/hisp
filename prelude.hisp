@@ -1,6 +1,10 @@
 ; Hisp Prelude
 
 ;; MATH
+(define inc (n) (+ 1 (n)))
+
+(define dec (n) (- (n) 1))
+
 (define sum (ns) (foldlH + 0 (ns)))
 
 (define product (ns) (foldlH * 1 (ns)))
