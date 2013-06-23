@@ -92,7 +92,7 @@ lambda = do
   (string "lambda" <|> string "λ") >> spaces
   (ps,body) <- functionBody
   let ps' = expList ps
-      name  = "lambda"
+      name  = "λ"
       hash' = hash $ show body  -- Should be unique enough. Inefficient?
       func  = Function name hash' (Just body)
               (Exactly (length ps') ps') (const $ e body)

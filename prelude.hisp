@@ -111,10 +111,6 @@
                         (tail (l))))))
 
 ;; OTHER
-; Function Composition
-; Doesn't seem like lexical closures work...
-(define . (f g) (lambda (a) ((f) ((g) (a)))))
-
 (define not (p) (if (p) False True))
 
 (define id (n) (n))

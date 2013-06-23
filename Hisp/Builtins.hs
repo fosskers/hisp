@@ -1,12 +1,14 @@
 module Hisp.Builtins where
 
-import Control.Monad.State.Lazy (get)
+import Control.Monad.State.Lazy (get, modify)
 import Control.Applicative ((<$>), (<*>))
-import Control.Monad       (filterM, foldM)
+import Control.Monad       (filterM, foldM, (>=>))
+import Data.Hashable       (hash)
 import Data.Map            (fromList)
 
 import Hisp.Eval
 import Hisp.Types
+import Hisp.Scope
 import Hisp.Utils (tau, twinZip)
 
 ---
@@ -68,7 +70,8 @@ listFunctions =
 otherFunctions :: [Function]
 otherFunctions =
   [ Function "show" 901 Nothing (Exactly 1 [])
-    (\(x:_) -> return $ List $ map (Val . C) (show x)) ]
+    (\(x:_) -> return $ List $ map (Val . C) (show x))
+  , Function "." 902 Nothing (AtLeast 0) compose ]
 
 type Evaluator a b = (Exp -> Either String Number) -> a -> b -> Evaluate Number
 
@@ -153,3 +156,14 @@ foldlH s z l = do
 
 apply' :: Exp -> [Exp] -> Evaluate Exp
 apply' f es = (List . (f :)) `fmap` mapM e es >>= e
+
+------------------
+-- Other Functions
+------------------
+compose :: [Exp] -> Evaluate Exp
+compose ss = mapM_ (e >=> is sym) ss >> do
+  let hash' = hash $ concatMap show ss
+      func  = Function "λ" hash' Nothing (Exactly 1 [])
+             (\(es:_) -> foldM (\acc s -> e $ List [s,acc]) es $ reverse ss)
+  modify $ newLambda func
+  return $ Symbol "λ" hash'
