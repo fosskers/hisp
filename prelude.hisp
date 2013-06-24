@@ -1,5 +1,7 @@
 ; Hisp Prelude
 
+(require "list.hisp")
+
 ;; MATH
 (define inc (n) (+ 1 (n)))
 
@@ -68,51 +70,6 @@
 			     (if (prime? (next))
 				 (next)
 				 (next-prime (next))))))
-
-;; LISTS
-; `rangeH` is must faster.
-(define range (a b) (if (= (a) (b))
-                        ((a))
-                        (: (a) (range (+ 1 (a)) (b)))))
-
-(define range-step (a b c) (range-step' (a) (- (b) (a)) (c)))
-
-; Need closures...
-(define range-step' (a s c) (if (> (a) (c))
-                                ()
-                                (: (a) (range-step' (+ (s) (a)) (s) (c)))))
-
-(define null? (l) (= 0 (len (l))))
-
-(define single? (l) (= 1 (len (l))))
-
-(define map (f l) (if (null? (l))
-                      ()
-                      (: ((f) (head (l)))
-                         (map (f) (tail (l))))))
-
-(define filter (p l)
-   (if (null? (l))
-       ()
-       (if ((p) (head (l)))
-           (: (head (l)) (filter (p) (tail (l))))
-           (filter (p) (tail (l))))))
-
-; Iterative, so better? Tail-recursable?
-(define foldl (f z l)
-        (if (null? (l))
-            (z)
-            (foldl (f)
-                   ((f) (z) (head (l)))
-                   (tail (l)))))
-
-(define foldr (f z l)
-        (if (null? (l))
-            (z)
-            ((f) (head (l))
-                 (foldr (f)
-                        (z)
-                        (tail (l))))))
 
 ;; OTHER
 (define not (p) (if (p) False True))

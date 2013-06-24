@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 
-module Hisp.Parser ( parseExp ) where
+module Hisp.Parser where  --( parseExp ) where
 
 import Text.ParserCombinators.Parsec hiding ((<|>))
 import Control.Applicative           hiding (many)
@@ -54,6 +54,12 @@ symbol = flip Symbol noHash <$> (many1 $ noneOf "\n()[] ")
 
 oneChar :: HispParser Exp
 oneChar = char '\'' *> (Val . C <$> noneOf "'") <* char '\''
+
+special :: HispParser Char
+special = do
+  char '\\'
+  cs <- many1 $ noneOf "\n"
+  return $ read ('\'' : cs ++ "'")
 
 -- Which is of course, a String.
 -- Doesn't seem to allow multiline strings.

@@ -139,6 +139,8 @@
 
 (assertEq 120 (product (1 2 3 4 5)) "(product (1 2 3 4 5))")
 
+(assertEq (5 4 3 2 1) (reverse (1 2 3 4 5)) "(reverse (1 2 3 4 5))")
+
 (define foo 1)
 (assertEq 1 (foo) "(foo)")
 
